@@ -1,10 +1,11 @@
 ﻿using KidsLeisure.DAL.Entities;
 using Microsoft.EntityFrameworkCore;
 using KidsLeisure.DAL.Configurations;
+using KidsLeisure.Core.Interfaces;
 
 namespace KidsLeisure.DAL.DBContext
 {
-    public class LeisureDbContext : DbContext
+    public class LeisureDbContext : DbContext, ILeisureDbContext
     {
         public DbSet<OrderEntity> Orders { get; set; }
         public DbSet<CustomerEntity> Customers { get; set; }

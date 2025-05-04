@@ -4,6 +4,7 @@ using KidsLeisure.BLL.Interfaces;
 using KidsLeisure.DAL.Entities;
 using KidsLeisure.DAL.Helpers;
 using KidsLeisure.DAL.Interfaces;
+using KidsLeisure.BLL.Calculator;
 
 namespace KidsLeisure.Core.Services
 {
@@ -11,18 +12,18 @@ namespace KidsLeisure.Core.Services
     {
         private readonly IRepository<OrderEntity> _orderRepository;
         private readonly LeisureDbContext _context;
-        //private readonly PriceCalculatorSelector _priceCalculatorSelector;
+        private readonly PriceCalculatorSelector _priceCalculatorSelector;
         private readonly ICustomerService _customerService;
 
         public OrderService(
             IRepository<OrderEntity> orderRepository,
             LeisureDbContext context,
-            //PriceCalculatorSelector priceCalculatorSelector,
+            PriceCalculatorSelector priceCalculatorSelector,
             ICustomerService customerService)
         {
             _orderRepository = orderRepository;
             _context = context ?? throw new ArgumentNullException(nameof(context));
-            //_priceCalculatorSelector = priceCalculatorSelector;
+            _priceCalculatorSelector = priceCalculatorSelector;
             _customerService = customerService;
         }
 
@@ -87,7 +88,7 @@ namespace KidsLeisure.Core.Services
             }).ToList();
             await _context.Set<OrderZoneEntity>().AddRangeAsync(orderZones);
 
-            //CurrentOrder.TotalPrice = await CalculateOrderPriceAsync(ProgramType.Birthday);
+            CurrentOrder.TotalPrice = await CalculateOrderPriceAsync(ProgramType.Birthday);
 
             await _context.SaveChangesAsync();
             _customerService.CurrentCustomer.Orders.Add(CurrentOrder);
@@ -105,11 +106,11 @@ namespace KidsLeisure.Core.Services
             await _orderRepository.DeleteAsync(CurrentOrder.OrderId);
         }
 
-        /*public async Task<decimal> CalculateOrderPriceAsync(ProgramType OrderType)
+        public async Task<decimal> CalculateOrderPriceAsync(ProgramType OrderType)
         {
             var priceCalculator = _priceCalculatorSelector.SelectStrategy(OrderType);
             return await priceCalculator.CalculatePriceAsync(CurrentOrder);
-        }*/
+        }
 
         public void SetOrderTime(DateTime dateTime)
         {

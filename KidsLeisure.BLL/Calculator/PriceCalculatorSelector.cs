@@ -3,7 +3,7 @@ using KidsLeisure.BLL.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using KidsLeisure.DAL.Helpers;
 
-namespace KidsLeisure.BLL.Helpers
+namespace KidsLeisure.BLL.Calculator
 {
     public class PriceCalculatorSelector
     {

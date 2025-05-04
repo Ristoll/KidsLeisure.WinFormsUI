@@ -20,7 +20,7 @@ namespace KidsLeisure.BLL.Interfaces
         Task<OrderEntity> UpdateOrderAsync();
         Task DeleteOrderAsync();
         Task<IItemEntity?> FindItemByIdAsync<TItem>(int id) where TItem : class, IItemEntity;
-        //Task<decimal> CalculateOrderPriceAsync(ProgramType OrderType);
+        Task<decimal> CalculateOrderPriceAsync(ProgramType OrderType);
         void AddToOrderCollection(IItemEntity selectedItem);
         void RemoveFromOrderCollection(IOrderItemEntity selectedItem);
         void SetOrderTime(DateTime dateTime);

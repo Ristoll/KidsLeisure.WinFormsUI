@@ -1,7 +1,8 @@
 ﻿using KidsLeisure.DAL.Entities;
 using KidsLeisure.DAL.Helpers;
+using KidsLeisure.DAL.Interfaces;
 
-namespace KidsLeisure.DAL.Interfaces
+namespace KidsLeisure.BLL.Interfaces
 {
     public interface IOrderService
     {

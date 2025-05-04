@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.10.35027.167
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KidsLeisure.WinFormsUI", "KidsLeisure.WinFormsUI\KidsLeisure.WinFormsUI.csproj", "{547B936E-A079-40BE-9322-EE78FCF1B051}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KidsLeisure.WinFormsUI", "KidsLeisure.WinFormsUI\KidsLeisure.WinFormsUI.csproj", "{547B936E-A079-40BE-9322-EE78FCF1B051}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KidsLeisure.DAL", "KidsLeisure.DAL\KidsLeisure.DAL.csproj", "{DD540E62-E684-4275-B548-33BF9E879485}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{547B936E-A079-40BE-9322-EE78FCF1B051}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{547B936E-A079-40BE-9322-EE78FCF1B051}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{547B936E-A079-40BE-9322-EE78FCF1B051}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DD540E62-E684-4275-B548-33BF9E879485}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DD540E62-E684-4275-B548-33BF9E879485}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DD540E62-E684-4275-B548-33BF9E879485}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DD540E62-E684-4275-B548-33BF9E879485}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

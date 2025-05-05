@@ -43,9 +43,8 @@ namespace KidsLeisure.UI
                 }
                 else if (clickedItem.Text == "Кошик")
                 {
-                    //Відкриття вікна Кошика
-                    //ShoppingCartWin shoppingCart = new ShoppingCartWin(_orderService);
-                    //shoppingCart.Show();
+                    ShoppingCartWin shoppingCart = new ShoppingCartWin(_orderService);
+                    shoppingCart.Show();
                 }
                 else
                 {

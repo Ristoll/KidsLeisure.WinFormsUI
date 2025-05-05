@@ -14,6 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\KidsLeisure.BLL\KidsLeisure.BLL.csproj" />
     <ProjectReference Include="..\KidsLeisure.DAL\KidsLeisure.DAL.csproj" />
   </ItemGroup>
 

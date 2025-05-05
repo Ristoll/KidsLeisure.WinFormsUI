@@ -1,9 +1,11 @@
 using KidsLeisure.DAL.Entities;
 using KidsLeisure.DAL.DBContext;
+using KidsLeisure.BLL.Interfaces;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using System.Configuration;
+using KidsLeisure.UI;
 
 namespace KidsLeisure.WinFormsUI
 {
@@ -53,9 +55,10 @@ namespace KidsLeisure.WinFormsUI
                     context.SaveChanges();
                 }
             }
-
+            var orderService = host.Services.GetRequiredService<IOrderService>();
+            var customerService = host.Services.GetRequiredService<ICustomerService>();
             ApplicationConfiguration.Initialize();
-            Application.Run(new Form1());
+            Application.Run(new AuthorizationWin(orderService, customerService));
         }
         static IHostBuilder CreateHostBuilder() =>
     Host.CreateDefaultBuilder()

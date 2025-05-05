@@ -1,4 +1,4 @@
-﻿namespace KidsLeisure.Core.Helpers
+﻿namespace KidsLeisure.DAL.Helpers
 {
     public class DisplayItem<T>
     {

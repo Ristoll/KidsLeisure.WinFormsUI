@@ -6,7 +6,7 @@ using KidsLeisure.DAL.Helpers;
 using KidsLeisure.DAL.Interfaces;
 using KidsLeisure.BLL.Calculator;
 
-namespace KidsLeisure.Core.Services
+namespace KidsLeisure.BLL.Services
 {
     public class OrderService : IOrderService
     {

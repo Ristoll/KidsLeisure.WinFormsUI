@@ -1,13 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using KidsLeisure.BLL.Interfaces;
+﻿using KidsLeisure.BLL.Interfaces;
 using KidsLeisure.DAL.Entities;
 
 namespace KidsLeisure.UI
@@ -15,13 +6,11 @@ namespace KidsLeisure.UI
     public partial class KidsLeisureWin : Form
     {
         private readonly IOrderService _orderService;
-        private readonly ICustomerService _customerService;
         public KidsLeisureWin(IOrderService orderService, ICustomerService customerService)
         {
             InitializeComponent();
             _orderService = orderService;
             panel2.Visible = false;
-            _customerService = customerService;
         }
 
         private void panel2_Paint(object sender, PaintEventArgs e)
@@ -100,7 +89,6 @@ namespace KidsLeisure.UI
             }
             UIHelper.AddItemsToCart(_orderService, listBox2);
         }
-        //Метод для зображення всіх складових програми.
         private async void деньНародженняToolStripMenuItem_Click(object sender, EventArgs e)
         {
             await _orderService.CreateBirthdayOrderAsync();

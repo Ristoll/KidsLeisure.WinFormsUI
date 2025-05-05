@@ -9,7 +9,6 @@ using KidsLeisure.UI;
 using KidsLeisure.BLL.Calculator;
 using KidsLeisure.BLL.Repositories;
 using KidsLeisure.BLL.Services;
-using KidsLeisure.Core.Services;
 using KidsLeisure.DAL.Helpers;
 
 namespace KidsLeisure.WinFormsUI

@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using KidsLeisure.DAL.Interfaces;
 using KidsLeisure.BLL.Interfaces;
 using KidsLeisure.DAL.Entities;

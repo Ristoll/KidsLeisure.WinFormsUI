@@ -111,9 +111,8 @@ namespace KidsLeisure.UI
             message += await UIHelper.GetCharactersMessageAsync(_orderService);
             message += $"Загальна ціна: {_orderService.CurrentOrder.TotalPrice} грн\n";
             message += $"Для замовлення оберіть дату та час:\n";
-            //Відкриття вікна замовлення програми
-            //ProgramOrderWin programOrderWin = new ProgramOrderWin(message, _orderService);
-            //programOrderWin.Show();
+            ProgramOrderWin programOrderWin = new ProgramOrderWin(message, _orderService);
+            programOrderWin.Show();
         }
     }
 }

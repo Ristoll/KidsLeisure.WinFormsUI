@@ -42,9 +42,9 @@ namespace KidsLeisure.UI
                 await _customerService.CreateCustomerAsync();
 
                 MessageBox.Show("Користувач авторизований успішно!");
-                //Відкриття головної форми програми
-                //KidsLeisureWin mainForm = new KidsLeisureWin(_orderService, _customerService);
-                //mainForm.Show();
+
+                KidsLeisureWin mainForm = new KidsLeisureWin(_orderService, _customerService);
+                mainForm.Show();
             }
             catch (Exception ex)
             {

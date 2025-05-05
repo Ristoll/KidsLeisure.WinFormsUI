@@ -6,6 +6,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using System.Configuration;
 using KidsLeisure.UI;
+using KidsLeisure.BLL.Calculator;
+using KidsLeisure.BLL.Repositories;
+using KidsLeisure.BLL.Services;
+using KidsLeisure.Core.Services;
+using KidsLeisure.DAL.Helpers;
 
 namespace KidsLeisure.WinFormsUI
 {
@@ -68,6 +73,30 @@ namespace KidsLeisure.WinFormsUI
 
             services.AddDbContext<LeisureDbContext>(options =>
                 options.UseSqlServer(connectionString));
+            
+            services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+            services.AddScoped<ICustomerService, CustomerService>();
+            services.AddScoped<CustomProgramPriceCalculator>();
+            services.AddScoped<DefaultPriceCalculator>();
+
+            services.AddScoped<Func<ProgramType, IPriceCalculatorStrategy>>(serviceProvider => strategyType =>
+            {
+                switch (strategyType)
+                {
+                    case ProgramType.Custom:
+                        return serviceProvider.GetRequiredService<CustomProgramPriceCalculator>();
+                    case ProgramType.Birthday:
+                        return serviceProvider.GetRequiredService<DefaultPriceCalculator>();
+                    default:
+                        return serviceProvider.GetRequiredService<DefaultPriceCalculator>();
+                }
+            });
+
+            services.AddScoped<PriceCalculatorSelector>();
+
+            services.AddScoped<IOrderService, OrderService>();
+
+            services.AddScoped<Lazy<IOrderService>>(provider => new Lazy<IOrderService>(() => provider.GetRequiredService<IOrderService>()));
         });
     }
 }

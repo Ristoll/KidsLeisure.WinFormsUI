@@ -7,5 +7,6 @@ namespace KidsLeisure.DAL.Entities
         public string Name { get; set; } = string.Empty;
         public decimal Price { get; set; }
         public string DisplayName => $"{Name} - {Price} грн";
+        public int GetId() => AttractionId;
     }
 }

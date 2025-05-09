@@ -10,150 +10,147 @@ namespace KidsLeisure.BLL.Services
 {
     public class OrderService : IOrderService
     {
-        private readonly IRepository<OrderEntity> _orderRepository;
-        private readonly LeisureDbContext _context;
-        private readonly PriceCalculatorSelector _priceCalculatorSelector;
+        private readonly IRepositoryFactory _repositoryFactory;
         private readonly ICustomerService _customerService;
+        private readonly PriceCalculatorSelector _priceCalculatorSelector;
+
+        public OrderEntity CurrentOrder { get; set; } = new();
 
         public OrderService(
-            IRepository<OrderEntity> orderRepository,
-            LeisureDbContext context,
-            PriceCalculatorSelector priceCalculatorSelector,
-            ICustomerService customerService)
+            IRepositoryFactory repositoryFactory,
+            ICustomerService customerService,
+            PriceCalculatorSelector priceCalculatorSelector)
         {
-            _orderRepository = orderRepository;
-            _context = context ?? throw new ArgumentNullException(nameof(context));
-            _priceCalculatorSelector = priceCalculatorSelector;
+            _repositoryFactory = repositoryFactory;
             _customerService = customerService;
+            _priceCalculatorSelector = priceCalculatorSelector;
         }
-
-        public OrderEntity CurrentOrder { get; set; } = new OrderEntity();
-        public OrderEntity GetCurrentOrder() => CurrentOrder;
 
         public async Task<List<T>> GetAllItemsAsync<T>() where T : class, IItemEntity
         {
-            return await _context.Set<T>().ToListAsync();
+            return await _repositoryFactory.GetRepository<T>().GetAllAsync();
         }
 
-        public void ClearCurrentOrder()
-        {
-            CurrentOrder = new OrderEntity();
-        }
+        public void ClearCurrentOrder() => CurrentOrder = new();
 
         public async Task<OrderEntity> CreateCustomOrderAsync()
         {
-            CurrentOrder.CustomerName = _customerService.CurrentCustomer.NickName;
-            CurrentOrder.CustomerId = _customerService.CurrentCustomer.CustomerId;
-            CurrentOrder.CustomerPhone = _customerService.CurrentCustomer.PhoneNumber;
-            await _orderRepository.AddAsync(CurrentOrder);
-            _customerService.CurrentCustomer.Orders.Add(CurrentOrder);
+            var customer = _customerService.CurrentCustomer!;
+            CurrentOrder.CustomerId = customer.CustomerId;
+            CurrentOrder.CustomerName = customer.NickName;
+            CurrentOrder.CustomerPhone = customer.PhoneNumber;
+
+            await _repositoryFactory.GetRepository<OrderEntity>().AddAsync(CurrentOrder);
+            customer.Orders.Add(CurrentOrder);
             return CurrentOrder;
         }
 
         public async Task<OrderEntity> CreateBirthdayOrderAsync()
         {
+            var customer = _customerService.CurrentCustomer!;
             CurrentOrder = new OrderEntity
             {
                 ProgramType = ProgramType.Birthday,
-                CustomerId = _customerService.CurrentCustomer.CustomerId,
-                CustomerName = _customerService.CurrentCustomer.NickName,
-                CustomerPhone = _customerService.CurrentCustomer.PhoneNumber
+                CustomerId = customer.CustomerId,
+                CustomerName = customer.NickName,
+                CustomerPhone = customer.PhoneNumber
             };
 
-            await _context.Set<OrderEntity>().AddAsync(CurrentOrder);
-            await _context.SaveChangesAsync();
+            await _repositoryFactory.GetRepository<OrderEntity>().AddAsync(CurrentOrder);
 
-            var attractions = await _context.Set<AttractionEntity>().Take(3).ToListAsync();
-            var characters = await _context.Set<CharacterEntity>().Take(2).ToListAsync();
-            var zones = await _context.Set<ZoneEntity>().Take(2).ToListAsync();
+            var attractionRepo = _repositoryFactory.GetRepository<AttractionEntity>();
+            var characterRepo = _repositoryFactory.GetRepository<CharacterEntity>();
+            var zoneRepo = _repositoryFactory.GetRepository<ZoneEntity>();
 
-            var orderAttractions = attractions.Select(a => new OrderAttractionEntity
+            var orderAttractionRepo = _repositoryFactory.GetRepository<OrderAttractionEntity>();
+            var orderCharacterRepo = _repositoryFactory.GetRepository<OrderCharacterEntity>();
+            var orderZoneRepo = _repositoryFactory.GetRepository<OrderZoneEntity>();
+
+            var attractions = (await attractionRepo.GetAllAsync()).Take(3).ToList();
+            var characters = (await characterRepo.GetAllAsync()).Take(2).ToList();
+            var zones = (await zoneRepo.GetAllAsync()).Take(2).ToList();
+
+            await orderAttractionRepo.AddRangeAsync(attractions.Select(a => new OrderAttractionEntity
             {
                 OrderId = CurrentOrder.OrderId,
                 AttractionId = a.AttractionId
-            }).ToList();
-            await _context.Set<OrderAttractionEntity>().AddRangeAsync(orderAttractions);
+            }));
 
-            var orderCharacters = characters.Select(c => new OrderCharacterEntity
+            await orderCharacterRepo.AddRangeAsync(characters.Select(c => new OrderCharacterEntity
             {
                 OrderId = CurrentOrder.OrderId,
                 CharacterId = c.CharacterId
-            }).ToList();
-            await _context.Set<OrderCharacterEntity>().AddRangeAsync(orderCharacters);
+            }));
 
-            var orderZones = zones.Select(z => new OrderZoneEntity
+            await orderZoneRepo.AddRangeAsync(zones.Select(z => new OrderZoneEntity
             {
                 OrderId = CurrentOrder.OrderId,
                 ZoneId = z.ZoneId
-            }).ToList();
-            await _context.Set<OrderZoneEntity>().AddRangeAsync(orderZones);
+            }));
 
             CurrentOrder.TotalPrice = await CalculateOrderPriceAsync(ProgramType.Birthday);
+            customer.Orders.Add(CurrentOrder);
 
-            await _context.SaveChangesAsync();
-            _customerService.CurrentCustomer.Orders.Add(CurrentOrder);
             return CurrentOrder;
         }
 
         public async Task<OrderEntity> UpdateOrderAsync()
         {
-            await _orderRepository.UpdateAsync(CurrentOrder);
+            await _repositoryFactory.GetRepository<OrderEntity>().UpdateAsync(CurrentOrder);
             return CurrentOrder;
         }
 
         public async Task DeleteOrderAsync()
         {
-            await _orderRepository.DeleteAsync(CurrentOrder.OrderId);
+            await _repositoryFactory.GetRepository<OrderEntity>().DeleteAsync(CurrentOrder.OrderId);
         }
 
         public async Task<decimal> CalculateOrderPriceAsync(ProgramType OrderType)
         {
-            var priceCalculator = _priceCalculatorSelector.SelectStrategy(OrderType);
-            return await priceCalculator.CalculatePriceAsync(CurrentOrder);
+            var strategy = _priceCalculatorSelector.SelectStrategy(OrderType);
+            return await strategy.CalculatePriceAsync(CurrentOrder);
         }
 
-        public void SetOrderTime(DateTime dateTime)
-        {
-            CurrentOrder.Date = dateTime;
-        }
-
-        public void SetOrderType(ProgramType eOrderType)
-        {
-            CurrentOrder.ProgramType = eOrderType;
-        }
-
-        public void SetTotalPrice(decimal totalPrice)
-        {
-            CurrentOrder.TotalPrice = totalPrice;
-        }
+        public void SetOrderTime(DateTime dateTime) => CurrentOrder.Date = dateTime;
+        public void SetOrderType(ProgramType eOrderType) => CurrentOrder.ProgramType = eOrderType;
+        public void SetTotalPrice(decimal totalPrice) => CurrentOrder.TotalPrice = totalPrice;
 
         public void AddToOrderCollection(IItemEntity selectedItem)
         {
             switch (selectedItem)
             {
-                case ZoneEntity zone:
-                    CurrentOrder.Zones!.Add(new OrderZoneEntity
-                    {
-                        ZoneId = zone.ZoneId,
-                        OrderId = CurrentOrder.OrderId
-                    });
-                    break;
                 case AttractionEntity attraction:
-                    CurrentOrder.Attractions!.Add(new OrderAttractionEntity
+                    var orderAttraction = new OrderAttractionEntity
                     {
+                        OrderId = CurrentOrder.OrderId,
                         AttractionId = attraction.AttractionId,
-                        OrderId = CurrentOrder.OrderId
-                    });
+                        Attraction = attraction
+                    };
+                    CurrentOrder.Attractions.Add(orderAttraction);
                     break;
+
                 case CharacterEntity character:
-                    CurrentOrder.Characters!.Add(new OrderCharacterEntity
+                    var orderCharacter = new OrderCharacterEntity
                     {
+                        OrderId = CurrentOrder.OrderId,
                         CharacterId = character.CharacterId,
-                        OrderId = CurrentOrder.OrderId
-                    });
+                        Character = character
+                    };
+                    CurrentOrder.Characters.Add(orderCharacter);
                     break;
+
+                case ZoneEntity zone:
+                    var orderZone = new OrderZoneEntity
+                    {
+                        OrderId = CurrentOrder.OrderId,
+                        ZoneId = zone.ZoneId,
+                        Zone = zone
+                    };
+                    CurrentOrder.Zones.Add(orderZone);
+                    break;
+
                 default:
-                    throw new InvalidOperationException("Невідомий тип елемента");
+                    throw new ArgumentException("Unknown item type.");
             }
         }
 
@@ -162,46 +159,27 @@ namespace KidsLeisure.BLL.Services
             switch (selectedItem)
             {
                 case OrderAttractionEntity attraction:
-                    var attractionToRemove = CurrentOrder.Attractions
-                        .FirstOrDefault(a => a.AttractionId == attraction.AttractionId);
-                    if (attractionToRemove != null)
-                        CurrentOrder.Attractions!.Remove(attractionToRemove);
-                    else
-                        throw new InvalidOperationException("Атракціон не знайдений у замовленні");
+                    CurrentOrder.Attractions.Remove(attraction);
                     break;
-                case OrderZoneEntity zone:
-                    var zoneToRemove = CurrentOrder.Zones
-                        .FirstOrDefault(z => z.ZoneId == zone.ZoneId);
-                    if (zoneToRemove != null)
-                        CurrentOrder.Zones!.Remove(zoneToRemove);
-                    else
-                        throw new InvalidOperationException("Зона не знайдена у замовленні");
-                    break;
+
                 case OrderCharacterEntity character:
-                    var characterToRemove = CurrentOrder.Characters
-                        .FirstOrDefault(c => c.CharacterId == character.CharacterId);
-                    if (characterToRemove != null)
-                        CurrentOrder.Characters!.Remove(characterToRemove);
-                    else
-                        throw new InvalidOperationException("Персонаж не знайдений у замовленні");
+                    CurrentOrder.Characters.Remove(character);
                     break;
+
+                case OrderZoneEntity zone:
+                    CurrentOrder.Zones.Remove(zone);
+                    break;
+
                 default:
-                    throw new InvalidOperationException("Невідомий тип елемента");
+                    throw new ArgumentException("Unknown order item type.");
             }
         }
 
-        public async Task<IItemEntity?> FindItemByIdAsync<TItem>(int id) where TItem : class, IItemEntity
+        public async Task<IItemEntity?> FindItemByIdAsync<T>(int id) where T : class, IItemEntity
         {
-            if (typeof(TItem) == typeof(AttractionEntity))
-                return await _context.Set<AttractionEntity>().FirstOrDefaultAsync(a => a.AttractionId == id) as IItemEntity;
-
-            if (typeof(TItem) == typeof(ZoneEntity))
-                return await _context.Set<ZoneEntity>().FirstOrDefaultAsync(z => z.ZoneId == id) as IItemEntity;
-
-            if (typeof(TItem) == typeof(CharacterEntity))
-                return await _context.Set<CharacterEntity>().FirstOrDefaultAsync(c => c.CharacterId == id) as IItemEntity;
-
-            throw new InvalidOperationException($"Невідомий тип елемента: {typeof(TItem).FullName}");
+            var repo = _repositoryFactory.GetRepository<T>();
+            return await repo.FindAsync(e => ((IItemEntity)e).GetId() == id);
         }
     }
+
 }

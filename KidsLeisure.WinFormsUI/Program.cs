@@ -74,6 +74,7 @@ namespace KidsLeisure.WinFormsUI
                 options.UseSqlServer(connectionString));
             
             services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+            services.AddScoped<IRepositoryFactory, RepositoryFactory>();
             services.AddScoped<ICustomerService, CustomerService>();
             services.AddScoped<CustomProgramPriceCalculator>();
             services.AddScoped<DefaultPriceCalculator>();

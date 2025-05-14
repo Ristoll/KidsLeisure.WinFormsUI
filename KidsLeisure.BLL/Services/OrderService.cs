@@ -5,6 +5,7 @@ using KidsLeisure.DAL.Entities;
 using KidsLeisure.DAL.Helpers;
 using KidsLeisure.DAL.Interfaces;
 using KidsLeisure.BLL.Calculator;
+using System.Linq.Expressions;
 
 namespace KidsLeisure.BLL.Services
 {
@@ -174,11 +175,11 @@ namespace KidsLeisure.BLL.Services
                     throw new ArgumentException("Unknown order item type.");
             }
         }
-
-        public async Task<IItemEntity?> FindItemByIdAsync<T>(int id) where T : class, IItemEntity
+        public async Task<T?> FindItemByAsync<T>(Expression<Func<T, bool>> predicate)
+    where T : class, IItemEntity
         {
             var repo = _repositoryFactory.GetRepository<T>();
-            return await repo.FindAsync(e => ((IItemEntity)e).GetId() == id);
+            return await repo.FindAsync(predicate);
         }
     }
 

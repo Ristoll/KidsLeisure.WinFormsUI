@@ -1,6 +1,7 @@
 ﻿using KidsLeisure.DAL.Entities;
 using KidsLeisure.DAL.Helpers;
 using KidsLeisure.DAL.Interfaces;
+using System.Linq.Expressions;
 
 namespace KidsLeisure.BLL.Interfaces
 {
@@ -19,7 +20,7 @@ namespace KidsLeisure.BLL.Interfaces
         Task<OrderEntity> CreateBirthdayOrderAsync();
         Task<OrderEntity> UpdateOrderAsync();
         Task DeleteOrderAsync();
-        Task<IItemEntity?> FindItemByIdAsync<TItem>(int id) where TItem : class, IItemEntity;
+        Task<T?> FindItemByAsync<T>(Expression<Func<T, bool>> predicate) where T : class, IItemEntity;
         Task<decimal> CalculateOrderPriceAsync(ProgramType OrderType);
         void AddToOrderCollection(IItemEntity selectedItem);
         void RemoveFromOrderCollection(IOrderItemEntity selectedItem);

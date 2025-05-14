@@ -32,7 +32,7 @@ namespace KidsLeisure.UI
             {
                 foreach (var attraction in orderService.CurrentOrder.Attractions ?? Enumerable.Empty<OrderAttractionEntity>())
                 {
-                    var entity = await orderService.FindItemByIdAsync<AttractionEntity>(attraction.AttractionId);
+                    var entity = await orderService.FindItemByAsync<AttractionEntity>(a => a.AttractionId == attraction.AttractionId);
                     var displayName = entity != null ? $"{entity.Name} - {entity.Price} грн" : "(Невідомий атракціон)";
                     displayItems.Add(new DisplayItem<T> { Entity = (T)(object)attraction, DisplayName = displayName });
                 }
@@ -41,7 +41,7 @@ namespace KidsLeisure.UI
             {
                 foreach (var zone in orderService.CurrentOrder.Zones ?? Enumerable.Empty<OrderZoneEntity>())
                 {
-                    var entity = await orderService.FindItemByIdAsync<ZoneEntity>(zone.ZoneId);
+                    var entity = await orderService.FindItemByAsync<ZoneEntity>(c => c.ZoneId == zone.ZoneId);
                     var displayName = entity != null ? $"{entity.Name} - {entity.Price} грн" : "(Невідома зона)";
                     displayItems.Add(new DisplayItem<T> { Entity = (T)(object)zone, DisplayName = displayName });
                 }
@@ -50,7 +50,7 @@ namespace KidsLeisure.UI
             {
                 foreach (var character in orderService.CurrentOrder.Characters ?? Enumerable.Empty<OrderCharacterEntity>())
                 {
-                    var entity = await orderService.FindItemByIdAsync<CharacterEntity>(character.CharacterId);
+                    var entity = await orderService.FindItemByAsync<CharacterEntity>(z => z.CharacterId == character.CharacterId);
                     var displayName = entity != null ? $"{entity.Name} - {entity.Price} грн" : "(Невідомий аніматор)";
                     displayItems.Add(new DisplayItem<T> { Entity = (T)(object)character, DisplayName = displayName });
                 }
@@ -156,7 +156,7 @@ namespace KidsLeisure.UI
                 message += "Атракціони:\n";
                 foreach (var item in items)
                 {
-                    var attraction = await orderService.FindItemByIdAsync<AttractionEntity>(item.AttractionId);
+                    var attraction = await orderService.FindItemByAsync<AttractionEntity>(z => z.AttractionId == item.AttractionId);
                     var name = attraction?.Name ?? "Невідомий атракціон";
                     var price = attraction?.Price ?? 0;
                     message += $"{name} - {price} грн\n";
@@ -181,7 +181,7 @@ namespace KidsLeisure.UI
                 message += "Зони:\n";
                 foreach (var item in items)
                 {
-                    var zone = await orderService.FindItemByIdAsync<ZoneEntity>(item.ZoneId);
+                    var zone = await orderService.FindItemByAsync<ZoneEntity>(z => z.ZoneId == item.ZoneId);
                     var name = zone?.Name ?? "Невідома зона";
                     var price = zone?.Price ?? 0;
                     message += $"{name} - {price} грн\n";
@@ -206,7 +206,7 @@ namespace KidsLeisure.UI
                 message += "Персонажі:\n";
                 foreach (var item in items)
                 {
-                    var character = await orderService.FindItemByIdAsync<CharacterEntity>(item.CharacterId);
+                    var character = await orderService.FindItemByAsync<CharacterEntity>(z => z.CharacterId == item.CharacterId);
                     var name = character?.Name ?? "Невідомий персонаж";
                     var price = character?.Price ?? 0;
                     message += $"{name} - {price} грн\n";

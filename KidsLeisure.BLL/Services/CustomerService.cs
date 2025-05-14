@@ -5,29 +5,35 @@ namespace KidsLeisure.BLL.Services
 {
     public class CustomerService : ICustomerService
     {
-        private readonly IRepository<CustomerEntity> _customerRepository;
+        private readonly IUnitOfWork _unitOfWork;
 
         public CustomerEntity? CurrentCustomer { get; set; }
 
-        public CustomerService(IRepository<CustomerEntity> customerRepository)
+        public CustomerService(IUnitOfWork unitOfWork)
         {
-            _customerRepository = customerRepository;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task<CustomerEntity> CreateCustomerAsync()
         {
-            await _customerRepository.AddAsync(CurrentCustomer!);
+            var repository = _unitOfWork.GetRepository<CustomerEntity>();
+
+            await repository.AddAsync(CurrentCustomer!);
+            await _unitOfWork.SaveChangesAsync();
+
             return CurrentCustomer!;
         }
 
         public async Task<List<CustomerEntity>> GetAllCustomersAsync()
         {
-            return await _customerRepository.GetAllAsync();
+            var repository = _unitOfWork.GetRepository<CustomerEntity>();
+            return await repository.GetAllAsync();
         }
 
         public async Task<CustomerEntity?> GetCustomerByIdAsync(int customerId)
         {
-            return await _customerRepository.FindAsync(c => c.CustomerId == customerId);
+            var repository = _unitOfWork.GetRepository<CustomerEntity>();
+            return await repository.FindAsync(c => c.CustomerId == customerId);
         }
     }
 }

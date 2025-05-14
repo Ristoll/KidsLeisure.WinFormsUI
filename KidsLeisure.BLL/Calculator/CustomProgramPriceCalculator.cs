@@ -3,16 +3,11 @@ using KidsLeisure.BLL.Interfaces;
 
 namespace KidsLeisure.BLL.Calculator
 {
-    public class CustomProgramPriceCalculator : IPriceCalculatorStrategy
+    public class CustomProgramPriceCalculator : BaseCalculator, IPriceCalculatorStrategy
     {
-        private readonly Lazy<IOrderService> _lazyOrderService;
         private readonly decimal additionalPrice = 100;
-        public CustomProgramPriceCalculator(Lazy<IOrderService> orderService)
-        {
-            _lazyOrderService = orderService ?? throw new ArgumentNullException(nameof(orderService));
-        }
 
-        public async Task<decimal> CalculatePriceAsync(OrderEntity order)
+        public CustomProgramPriceCalculator(Lazy<IOrderService> orderService) : base(orderService)
         {
             var orderService = _lazyOrderService.Value;
             decimal totalPrice = 0;
@@ -21,7 +16,7 @@ namespace KidsLeisure.BLL.Calculator
             {
                 foreach (var orderZone in order.Zones.Where(orderZone => orderZone.ZoneId != 0))
                 {
-                    var zone = await orderService.FindItemByAsync<ZoneEntity>(z => z.ZoneId == orderZone.ZoneId);
+                    var zone = await orderService.FindItemByIdAsync<ZoneEntity>(orderZone.ZoneId);
                     if (zone != null)
                     {
                         totalPrice += zone.Price;
@@ -33,7 +28,7 @@ namespace KidsLeisure.BLL.Calculator
             {
                 foreach (var orderAttraction in order.Attractions.Where(orderAttraction => orderAttraction.AttractionId != 0))
                 {
-                    var attraction = await orderService.FindItemByAsync<AttractionEntity>(a => a.AttractionId == orderAttraction.AttractionId);
+                    var attraction = await orderService.FindItemByIdAsync<AttractionEntity>(orderAttraction.AttractionId);
                     if (attraction != null)
                     {
                         totalPrice += attraction.Price;
@@ -45,7 +40,7 @@ namespace KidsLeisure.BLL.Calculator
             {
                 foreach (var orderCharacter in order.Characters.Where(orderCharacter => orderCharacter.CharacterId != 0))
                 {
-                    var character = await orderService.FindItemByAsync<CharacterEntity>(c => c.CharacterId == orderCharacter.CharacterId);
+                    var character = await orderService.FindItemByIdAsync<CharacterEntity>(orderCharacter.CharacterId);
                     if (character != null)
                     {
                         totalPrice += character.Price;
@@ -55,7 +50,7 @@ namespace KidsLeisure.BLL.Calculator
 
             totalPrice += additionalPrice;
 
-            return totalPrice;
+            return totalPrice + additionalPrice;
         }
     }
 }

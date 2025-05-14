@@ -1,13 +1,18 @@
-﻿using KidsLeisure.DAL.Entities;
-using KidsLeisure.BLL.Interfaces;
+﻿using KidsLeisure.BLL.Interfaces;
+using KidsLeisure.DAL.Entities;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace KidsLeisure.BLL.Calculator
 {
-    public class DefaultPriceCalculator : BaseCalculator, IPriceCalculatorStrategy
+    public class BaseCalculator
     {
         private readonly Lazy<IOrderService> _lazyOrderService;
 
-        public DefaultPriceCalculator(Lazy<IOrderService> orderService)
+        public BaseCalculator(Lazy<IOrderService> orderService)
         {
             _lazyOrderService = orderService ?? throw new ArgumentNullException(nameof(orderService));
         }

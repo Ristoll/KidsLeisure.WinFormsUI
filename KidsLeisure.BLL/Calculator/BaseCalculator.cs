@@ -26,7 +26,7 @@ namespace KidsLeisure.BLL.Calculator
             {
                 foreach (var orderZone in order.Zones.Where(orderZone => orderZone.ZoneId != 0))
                 {
-                    var zone = await orderService.FindItemByIdAsync<ZoneEntity>(orderZone.ZoneId);
+                    var zone = await orderService.FindItemByAsync<ZoneEntity>(z => z.ZoneId == orderZone.ZoneId);
                     if (zone != null)
                     {
                         totalPrice += zone.Price;
@@ -38,7 +38,7 @@ namespace KidsLeisure.BLL.Calculator
             {
                 foreach (var orderAttraction in order.Attractions.Where(orderAttraction => orderAttraction.AttractionId != 0))
                 {
-                    var attraction = await orderService.FindItemByIdAsync<AttractionEntity>(orderAttraction.AttractionId);
+                    var attraction = await orderService.FindItemByAsync<AttractionEntity>(z => z.AttractionId == orderAttraction.AttractionId);
                     if (attraction != null)
                     {
                         totalPrice += attraction.Price;
@@ -50,7 +50,7 @@ namespace KidsLeisure.BLL.Calculator
             {
                 foreach (var orderCharacter in order.Characters.Where(orderCharacter => orderCharacter.CharacterId != 0))
                 {
-                    var character = await orderService.FindItemByIdAsync<CharacterEntity>(orderCharacter.CharacterId);
+                    var character = await orderService.FindItemByAsync<CharacterEntity>(z => z.CharacterId == orderCharacter.CharacterId);
                     if (character != null)
                     {
                         totalPrice += character.Price;

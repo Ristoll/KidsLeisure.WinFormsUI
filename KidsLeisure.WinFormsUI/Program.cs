@@ -10,6 +10,7 @@ using KidsLeisure.BLL.Calculator;
 using KidsLeisure.BLL.Repositories;
 using KidsLeisure.BLL.Services;
 using KidsLeisure.DAL.Helpers;
+using KidsLeisure.BLL;
 
 namespace KidsLeisure.WinFormsUI
 {
@@ -74,7 +75,7 @@ namespace KidsLeisure.WinFormsUI
                 options.UseSqlServer(connectionString));
             
             services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
-            services.AddScoped<IRepositoryFactory, RepositoryFactory>();
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped<ICustomerService, CustomerService>();
             services.AddScoped<CustomProgramPriceCalculator>();
             services.AddScoped<DefaultPriceCalculator>();

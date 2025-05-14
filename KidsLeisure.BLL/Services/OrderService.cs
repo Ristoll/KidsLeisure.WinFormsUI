@@ -1,35 +1,33 @@
-﻿using Microsoft.EntityFrameworkCore;
-using KidsLeisure.DAL.DBContext;
-using KidsLeisure.BLL.Interfaces;
+﻿using KidsLeisure.BLL.Interfaces;
 using KidsLeisure.DAL.Entities;
 using KidsLeisure.DAL.Helpers;
-using KidsLeisure.DAL.Interfaces;
 using KidsLeisure.BLL.Calculator;
 using System.Linq.Expressions;
+using KidsLeisure.DAL.Interfaces;
 
 namespace KidsLeisure.BLL.Services
 {
     public class OrderService : IOrderService
     {
-        private readonly IRepositoryFactory _repositoryFactory;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly ICustomerService _customerService;
         private readonly PriceCalculatorSelector _priceCalculatorSelector;
 
         public OrderEntity CurrentOrder { get; set; } = new();
 
         public OrderService(
-            IRepositoryFactory repositoryFactory,
+            IUnitOfWork unitOfWork,
             ICustomerService customerService,
             PriceCalculatorSelector priceCalculatorSelector)
         {
-            _repositoryFactory = repositoryFactory;
+            _unitOfWork = unitOfWork;
             _customerService = customerService;
             _priceCalculatorSelector = priceCalculatorSelector;
         }
 
         public async Task<List<T>> GetAllItemsAsync<T>() where T : class, IItemEntity
         {
-            return await _repositoryFactory.GetRepository<T>().GetAllAsync();
+            return await _unitOfWork.GetRepository<T>().GetAllAsync();
         }
 
         public void ClearCurrentOrder() => CurrentOrder = new();
@@ -41,8 +39,10 @@ namespace KidsLeisure.BLL.Services
             CurrentOrder.CustomerName = customer.NickName;
             CurrentOrder.CustomerPhone = customer.PhoneNumber;
 
-            await _repositoryFactory.GetRepository<OrderEntity>().AddAsync(CurrentOrder);
+            await _unitOfWork.GetRepository<OrderEntity>().AddAsync(CurrentOrder);
             customer.Orders.Add(CurrentOrder);
+
+            await _unitOfWork.SaveChangesAsync();
             return CurrentOrder;
         }
 
@@ -57,33 +57,25 @@ namespace KidsLeisure.BLL.Services
                 CustomerPhone = customer.PhoneNumber
             };
 
-            await _repositoryFactory.GetRepository<OrderEntity>().AddAsync(CurrentOrder);
+            await _unitOfWork.GetRepository<OrderEntity>().AddAsync(CurrentOrder);
 
-            var attractionRepo = _repositoryFactory.GetRepository<AttractionEntity>();
-            var characterRepo = _repositoryFactory.GetRepository<CharacterEntity>();
-            var zoneRepo = _repositoryFactory.GetRepository<ZoneEntity>();
+            var attractions = (await _unitOfWork.GetRepository<AttractionEntity>().GetAllAsync()).Take(3).ToList();
+            var characters = (await _unitOfWork.GetRepository<CharacterEntity>().GetAllAsync()).Take(2).ToList();
+            var zones = (await _unitOfWork.GetRepository<ZoneEntity>().GetAllAsync()).Take(2).ToList();
 
-            var orderAttractionRepo = _repositoryFactory.GetRepository<OrderAttractionEntity>();
-            var orderCharacterRepo = _repositoryFactory.GetRepository<OrderCharacterEntity>();
-            var orderZoneRepo = _repositoryFactory.GetRepository<OrderZoneEntity>();
-
-            var attractions = (await attractionRepo.GetAllAsync()).Take(3).ToList();
-            var characters = (await characterRepo.GetAllAsync()).Take(2).ToList();
-            var zones = (await zoneRepo.GetAllAsync()).Take(2).ToList();
-
-            await orderAttractionRepo.AddRangeAsync(attractions.Select(a => new OrderAttractionEntity
+            await _unitOfWork.GetRepository<OrderAttractionEntity>().AddRangeAsync(attractions.Select(a => new OrderAttractionEntity
             {
                 OrderId = CurrentOrder.OrderId,
                 AttractionId = a.AttractionId
             }));
 
-            await orderCharacterRepo.AddRangeAsync(characters.Select(c => new OrderCharacterEntity
+            await _unitOfWork.GetRepository<OrderCharacterEntity>().AddRangeAsync(characters.Select(c => new OrderCharacterEntity
             {
                 OrderId = CurrentOrder.OrderId,
                 CharacterId = c.CharacterId
             }));
 
-            await orderZoneRepo.AddRangeAsync(zones.Select(z => new OrderZoneEntity
+            await _unitOfWork.GetRepository<OrderZoneEntity>().AddRangeAsync(zones.Select(z => new OrderZoneEntity
             {
                 OrderId = CurrentOrder.OrderId,
                 ZoneId = z.ZoneId
@@ -92,18 +84,21 @@ namespace KidsLeisure.BLL.Services
             CurrentOrder.TotalPrice = await CalculateOrderPriceAsync(ProgramType.Birthday);
             customer.Orders.Add(CurrentOrder);
 
+            await _unitOfWork.SaveChangesAsync();
             return CurrentOrder;
         }
 
         public async Task<OrderEntity> UpdateOrderAsync()
         {
-            await _repositoryFactory.GetRepository<OrderEntity>().UpdateAsync(CurrentOrder);
+            await _unitOfWork.GetRepository<OrderEntity>().UpdateAsync(CurrentOrder);
+            await _unitOfWork.SaveChangesAsync();
             return CurrentOrder;
         }
 
         public async Task DeleteOrderAsync()
         {
-            await _repositoryFactory.GetRepository<OrderEntity>().DeleteAsync(CurrentOrder.OrderId);
+            await _unitOfWork.GetRepository<OrderEntity>().DeleteAsync(CurrentOrder.OrderId);
+            await _unitOfWork.SaveChangesAsync();
         }
 
         public async Task<decimal> CalculateOrderPriceAsync(ProgramType OrderType)
@@ -175,12 +170,11 @@ namespace KidsLeisure.BLL.Services
                     throw new ArgumentException("Unknown order item type.");
             }
         }
+
         public async Task<T?> FindItemByAsync<T>(Expression<Func<T, bool>> predicate)
-    where T : class, IItemEntity
+            where T : class, IItemEntity
         {
-            var repo = _repositoryFactory.GetRepository<T>();
-            return await repo.FindAsync(predicate);
+            return await _unitOfWork.GetRepository<T>().FindAsync(predicate);
         }
     }
-
 }

@@ -1,9 +1,11 @@
-﻿using KidsLeisure.BLL.Interfaces;
+﻿using AutoMapper;
+using KidsLeisure.BLL.Calculator;
+using KidsLeisure.BLL.DTO;
+using KidsLeisure.BLL.Interfaces;
 using KidsLeisure.DAL.Entities;
 using KidsLeisure.DAL.Helpers;
-using KidsLeisure.BLL.Calculator;
-using System.Linq.Expressions;
 using KidsLeisure.DAL.Interfaces;
+using System.Linq.Expressions;
 
 namespace KidsLeisure.BLL.Services
 {
@@ -12,17 +14,20 @@ namespace KidsLeisure.BLL.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICustomerService _customerService;
         private readonly PriceCalculatorSelector _priceCalculatorSelector;
+        private readonly IMapper _mapper;
 
-        public OrderEntity CurrentOrder { get; set; } = new();
+        public OrderDto CurrentOrder { get; set; } = new();
 
         public OrderService(
             IUnitOfWork unitOfWork,
             ICustomerService customerService,
-            PriceCalculatorSelector priceCalculatorSelector)
+            PriceCalculatorSelector priceCalculatorSelector,
+            IMapper mapper)
         {
             _unitOfWork = unitOfWork;
             _customerService = customerService;
             _priceCalculatorSelector = priceCalculatorSelector;
+            _mapper = mapper;
         }
 
         public async Task<List<T>> GetAllItemsAsync<T>() where T : class, IItemEntity
@@ -32,32 +37,33 @@ namespace KidsLeisure.BLL.Services
 
         public void ClearCurrentOrder() => CurrentOrder = new();
 
-        public async Task<OrderEntity> CreateCustomOrderAsync()
+        public async Task<OrderDto> CreateCustomOrderAsync()
         {
-            var customer = _customerService.CurrentCustomer!;
-            CurrentOrder.CustomerId = customer.CustomerId;
-            CurrentOrder.CustomerName = customer.NickName;
-            CurrentOrder.CustomerPhone = customer.PhoneNumber;
+            var customerDto = _customerService.CurrentCustomer!;
+            var orderEntity = _mapper.Map<OrderEntity>(CurrentOrder);
 
-            await _unitOfWork.GetRepository<OrderEntity>().AddAsync(CurrentOrder);
-            customer.Orders.Add(CurrentOrder);
+            orderEntity.CustomerId = customerDto.Id;
+            orderEntity.CustomerName = customerDto.NickName;
+            orderEntity.CustomerPhone = customerDto.PhoneNumber;
 
+            await _unitOfWork.GetRepository<OrderEntity>().AddAsync(orderEntity);
             await _unitOfWork.SaveChangesAsync();
-            return CurrentOrder;
+
+            return _mapper.Map<OrderDto>(orderEntity);
         }
 
-        public async Task<OrderEntity> CreateBirthdayOrderAsync()
+        public async Task<OrderDto> CreateBirthdayOrderAsync()
         {
-            var customer = _customerService.CurrentCustomer!;
-            CurrentOrder = new OrderEntity
+            var customerDto = _customerService.CurrentCustomer!;
+            var orderEntity = new OrderEntity
             {
                 ProgramType = ProgramType.Birthday,
-                CustomerId = customer.CustomerId,
-                CustomerName = customer.NickName,
-                CustomerPhone = customer.PhoneNumber
+                CustomerId = customerDto.Id,
+                CustomerName = customerDto.NickName,
+                CustomerPhone = customerDto.PhoneNumber
             };
 
-            await _unitOfWork.GetRepository<OrderEntity>().AddAsync(CurrentOrder);
+            await _unitOfWork.GetRepository<OrderEntity>().AddAsync(orderEntity);
 
             var attractions = (await _unitOfWork.GetRepository<AttractionEntity>().GetAllAsync()).Take(3).ToList();
             var characters = (await _unitOfWork.GetRepository<CharacterEntity>().GetAllAsync()).Take(2).ToList();
@@ -65,34 +71,35 @@ namespace KidsLeisure.BLL.Services
 
             await _unitOfWork.GetRepository<OrderAttractionEntity>().AddRangeAsync(attractions.Select(a => new OrderAttractionEntity
             {
-                OrderId = CurrentOrder.OrderId,
+                OrderId = orderEntity.OrderId,
                 AttractionId = a.AttractionId
             }));
 
             await _unitOfWork.GetRepository<OrderCharacterEntity>().AddRangeAsync(characters.Select(c => new OrderCharacterEntity
             {
-                OrderId = CurrentOrder.OrderId,
+                OrderId = orderEntity.OrderId,
                 CharacterId = c.CharacterId
             }));
 
             await _unitOfWork.GetRepository<OrderZoneEntity>().AddRangeAsync(zones.Select(z => new OrderZoneEntity
             {
-                OrderId = CurrentOrder.OrderId,
+                OrderId = orderEntity.OrderId,
                 ZoneId = z.ZoneId
             }));
 
-            CurrentOrder.TotalPrice = await CalculateOrderPriceAsync(ProgramType.Birthday);
-            customer.Orders.Add(CurrentOrder);
-
+            orderEntity.TotalPrice = await CalculateOrderPriceAsync(ProgramType.Birthday);
             await _unitOfWork.SaveChangesAsync();
-            return CurrentOrder;
+
+            return _mapper.Map<OrderDto>(orderEntity);
         }
 
-        public async Task<OrderEntity> UpdateOrderAsync()
+        public async Task<OrderDto> UpdateOrderAsync()
         {
-            await _unitOfWork.GetRepository<OrderEntity>().UpdateAsync(CurrentOrder);
+            var orderEntity = _mapper.Map<OrderEntity>(CurrentOrder);
+            await _unitOfWork.GetRepository<OrderEntity>().UpdateAsync(orderEntity);
             await _unitOfWork.SaveChangesAsync();
-            return CurrentOrder;
+
+            return _mapper.Map<OrderDto>(orderEntity);
         }
 
         public async Task DeleteOrderAsync()
@@ -101,14 +108,15 @@ namespace KidsLeisure.BLL.Services
             await _unitOfWork.SaveChangesAsync();
         }
 
-        public async Task<decimal> CalculateOrderPriceAsync(ProgramType OrderType)
+        public async Task<decimal> CalculateOrderPriceAsync(ProgramType orderType)
         {
-            var strategy = _priceCalculatorSelector.SelectStrategy(OrderType);
-            return await strategy.CalculatePriceAsync(CurrentOrder);
+            var orderEntity = _mapper.Map<OrderEntity>(CurrentOrder);
+            var strategy = _priceCalculatorSelector.SelectStrategy(orderType);
+            return await strategy.CalculatePriceAsync(orderEntity);
         }
 
         public void SetOrderTime(DateTime dateTime) => CurrentOrder.Date = dateTime;
-        public void SetOrderType(ProgramType eOrderType) => CurrentOrder.ProgramType = eOrderType;
+        public void SetOrderType(ProgramType orderType) => CurrentOrder.ProgramType = _mapper.Map<ProgramTypeDto>(orderType);
         public void SetTotalPrice(decimal totalPrice) => CurrentOrder.TotalPrice = totalPrice;
 
         public void AddToOrderCollection(IItemEntity selectedItem)
@@ -116,33 +124,24 @@ namespace KidsLeisure.BLL.Services
             switch (selectedItem)
             {
                 case AttractionEntity attraction:
-                    var orderAttraction = new OrderAttractionEntity
+                    CurrentOrder.Attractions.Add(new OrderAttractionDto
                     {
-                        OrderId = CurrentOrder.OrderId,
-                        AttractionId = attraction.AttractionId,
-                        Attraction = attraction
-                    };
-                    CurrentOrder.Attractions.Add(orderAttraction);
+                        AttractionId = attraction.AttractionId
+                    });
                     break;
 
                 case CharacterEntity character:
-                    var orderCharacter = new OrderCharacterEntity
+                    CurrentOrder.Characters.Add(new OrderCharacterDto
                     {
-                        OrderId = CurrentOrder.OrderId,
-                        CharacterId = character.CharacterId,
-                        Character = character
-                    };
-                    CurrentOrder.Characters.Add(orderCharacter);
+                        CharacterId = character.CharacterId
+                    });
                     break;
 
                 case ZoneEntity zone:
-                    var orderZone = new OrderZoneEntity
+                    CurrentOrder.Zones.Add(new OrderZoneDto
                     {
-                        OrderId = CurrentOrder.OrderId,
-                        ZoneId = zone.ZoneId,
-                        Zone = zone
-                    };
-                    CurrentOrder.Zones.Add(orderZone);
+                        ZoneId = zone.ZoneId
+                    });
                     break;
 
                 default:
@@ -155,15 +154,15 @@ namespace KidsLeisure.BLL.Services
             switch (selectedItem)
             {
                 case OrderAttractionEntity attraction:
-                    CurrentOrder.Attractions.Remove(attraction);
+                    CurrentOrder.Attractions.RemoveAll(a => a.AttractionId == attraction.AttractionId);
                     break;
 
                 case OrderCharacterEntity character:
-                    CurrentOrder.Characters.Remove(character);
+                    CurrentOrder.Characters.RemoveAll(c => c.CharacterId == character.CharacterId);
                     break;
 
                 case OrderZoneEntity zone:
-                    CurrentOrder.Zones.Remove(zone);
+                    CurrentOrder.Zones.RemoveAll(z => z.ZoneId == zone.ZoneId);
                     break;
 
                 default:
@@ -178,3 +177,4 @@ namespace KidsLeisure.BLL.Services
         }
     }
 }
+

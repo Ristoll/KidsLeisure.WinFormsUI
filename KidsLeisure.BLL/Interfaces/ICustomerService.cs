@@ -1,12 +1,12 @@
-﻿using KidsLeisure.DAL.Entities;
+﻿using KidsLeisure.BLL.DTO;
 
 namespace KidsLeisure.BLL.Interfaces
 {
     public interface ICustomerService
     {
-        CustomerEntity CurrentCustomer { get; set; }
-        Task<CustomerEntity> CreateCustomerAsync();
-        Task<List<CustomerEntity>> GetAllCustomersAsync();
-        Task<CustomerEntity?> GetCustomerByIdAsync(int customerId);
+        CustomerDto CurrentCustomer { get; set; }
+        Task<CustomerDto> CreateCustomerAsync();
+        Task<List<CustomerDto>> GetAllCustomersAsync();
+        Task<CustomerDto?> GetCustomerByIdAsync(int customerId);
     }
 }

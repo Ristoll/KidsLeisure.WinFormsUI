@@ -2,23 +2,24 @@
 using KidsLeisure.DAL.Helpers;
 using KidsLeisure.DAL.Interfaces;
 using System.Linq.Expressions;
+using KidsLeisure.BLL.DTO;
 
 namespace KidsLeisure.BLL.Interfaces
 {
     public interface IOrderService
     {
-        public OrderEntity CurrentOrder { get; set; }
+        public OrderDto CurrentOrder { get; set; }
 
-        public void SetOrder(OrderEntity order)
+        public void SetOrder(OrderDto order)
         {
             CurrentOrder = order;
         }
         public void ClearCurrentOrder();
-        public OrderEntity GetCurrentOrder() => CurrentOrder;
+        public OrderDto GetCurrentOrder() => CurrentOrder;
         Task<List<T>> GetAllItemsAsync<T>() where T : class, IItemEntity;
-        Task<OrderEntity> CreateCustomOrderAsync();
-        Task<OrderEntity> CreateBirthdayOrderAsync();
-        Task<OrderEntity> UpdateOrderAsync();
+        Task<OrderDto> CreateCustomOrderAsync();
+        Task<OrderDto> CreateBirthdayOrderAsync();
+        Task<OrderDto> UpdateOrderAsync();
         Task DeleteOrderAsync();
         Task<T?> FindItemByAsync<T>(Expression<Func<T, bool>> predicate) where T : class, IItemEntity;
         Task<decimal> CalculateOrderPriceAsync(ProgramType OrderType);

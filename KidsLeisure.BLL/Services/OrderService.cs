@@ -73,16 +73,13 @@ namespace KidsLeisure.BLL.Services
                 CustomerPhone = customerDto.PhoneNumber
             };
 
-            // Додаємо замовлення
             await _unitOfWork.GetRepository<OrderEntity>().AddAsync(orderEntity);
             await _unitOfWork.SaveChangesAsync();
 
-            // Беремо деякі атракціони, персонажів і зони
             var attractions = (await _unitOfWork.GetRepository<AttractionEntity>().GetAllAsync()).Take(3).ToList();
             var characters = (await _unitOfWork.GetRepository<CharacterEntity>().GetAllAsync()).Take(2).ToList();
             var zones = (await _unitOfWork.GetRepository<ZoneEntity>().GetAllAsync()).Take(2).ToList();
 
-            // Додаємо зв’язки замовлення з атракціонами, персонажами, зонами
             await _unitOfWork.GetRepository<OrderAttractionEntity>().AddRangeAsync(attractions.Select(a => new OrderAttractionEntity
             {
                 OrderId = orderEntity.OrderId,
@@ -101,20 +98,15 @@ namespace KidsLeisure.BLL.Services
                 ZoneId = z.ZoneId
             }));
 
-            // Зберігаємо зв’язки в базі
             await _unitOfWork.SaveChangesAsync();
 
-            // Повторно завантажуємо замовлення з усіма зв’язками
             var orderWithItems = await _unitOfWork.GetRepository<OrderEntity>()
                 .GetByIdWithIncludesAsync(orderEntity.OrderId, includeZones: true, includeAttractions: true, includeCharacters: true);
 
-            // Обчислюємо загальну ціну
             orderWithItems.TotalPrice = await CalculateOrderPriceAsync(orderWithItems);
 
-            // Оновлюємо CurrentOrder (можливо, це поле класу)
             CurrentOrder = _mapper.Map<OrderDto>(orderWithItems);
 
-            // Зберігаємо оновлену ціну в базі
             await _unitOfWork.SaveChangesAsync();
 
             return CurrentOrder;

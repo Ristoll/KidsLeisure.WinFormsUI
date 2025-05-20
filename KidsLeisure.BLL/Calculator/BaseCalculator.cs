@@ -1,11 +1,5 @@
 ﻿using KidsLeisure.BLL.Interfaces;
 using KidsLeisure.DAL.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace KidsLeisure.BLL.Calculator
 {
     public class BaseCalculator

@@ -1,5 +1,4 @@
 ﻿using KidsLeisure.DAL.Entities;
-using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
 namespace KidsLeisure.BLL.Interfaces

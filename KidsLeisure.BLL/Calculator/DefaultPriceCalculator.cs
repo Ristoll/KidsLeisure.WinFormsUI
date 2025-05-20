@@ -1,5 +1,4 @@
-﻿using KidsLeisure.DAL.Entities;
-using KidsLeisure.BLL.Interfaces;
+﻿using KidsLeisure.BLL.Interfaces;
 
 namespace KidsLeisure.BLL.Calculator
 {

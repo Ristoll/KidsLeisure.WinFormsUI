@@ -1,9 +1,7 @@
 ﻿using KidsLeisure.BLL.Interfaces;
-using KidsLeisure.DAL.Entities;
 using KidsLeisure.DAL.Helpers;
 using AutoMapper;
 using KidsLeisure.BLL.DTO;
-using KidsLeisure.BLL.Services;
 
 namespace KidsLeisure.UI
 {

@@ -1,11 +1,6 @@
 ﻿using KidsLeisure.BLL.Interfaces;
 using KidsLeisure.BLL.Repositories;
 using KidsLeisure.DAL.DBContext;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace KidsLeisure.BLL
 {

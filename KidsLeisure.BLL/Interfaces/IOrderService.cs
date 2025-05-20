@@ -9,11 +9,6 @@ namespace KidsLeisure.BLL.Interfaces
     public interface IOrderService
     {
         public OrderDto CurrentOrder { get; set; }
-
-        public void SetOrder(OrderDto order)
-        {
-            CurrentOrder = order;
-        }
         public void ClearCurrentOrder();
         public OrderDto GetCurrentOrder() => CurrentOrder;
         Task<List<T>> GetAllItemsAsync<T>() where T : class, IItemEntity;

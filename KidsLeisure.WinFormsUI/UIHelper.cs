@@ -74,10 +74,6 @@ namespace KidsLeisure.UI
             listBox.DisplayMember = nameof(DisplayItem<T>.DisplayName);
             listBox.ValueMember = nameof(DisplayItem<T>.Entity);
         }
-
-
-
-
         public static void AddElementInListBox(ListBox listBox1, ListBox listBox2)
         {
             if (listBox1.SelectedIndex != -1)
@@ -160,8 +156,6 @@ namespace KidsLeisure.UI
             MessageBox.Show("Елемент видалено із замовлення.");
         }
 
-
-
         public static async Task<string> GetAttractionsMessageAsync(IOrderService orderService)
         {
             var message = string.Empty;
@@ -186,7 +180,6 @@ namespace KidsLeisure.UI
             return message;
         }
 
-
         public static async Task<string> GetZonesMessageAsync(IOrderService orderService)
         {
             var message = string.Empty;
@@ -210,7 +203,6 @@ namespace KidsLeisure.UI
 
             return message;
         }
-
 
         public static async Task<string> GetCharactersMessageAsync(IOrderService orderService)
         {

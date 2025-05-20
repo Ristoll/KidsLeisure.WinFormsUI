@@ -1,17 +1,18 @@
-using KidsLeisure.DAL.Entities;
-using KidsLeisure.DAL.DBContext;
-using KidsLeisure.BLL.Interfaces;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.EntityFrameworkCore;
-using System.Configuration;
-using KidsLeisure.UI;
+using Autofac;
+using Autofac.Extensions.DependencyInjection;
+using KidsLeisure.BLL;
 using KidsLeisure.BLL.Calculator;
+using KidsLeisure.BLL.Interfaces;
 using KidsLeisure.BLL.Repositories;
 using KidsLeisure.BLL.Services;
-using KidsLeisure.DAL.Helpers;
-using KidsLeisure.BLL;
+using KidsLeisure.DAL.DBContext;
+using KidsLeisure.DAL.Entities;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using AutoMapper;
+using KidsLeisure.DAL.Helpers;
+using KidsLeisure.UI;
 
 namespace KidsLeisure.WinFormsUI
 {
@@ -21,6 +22,7 @@ namespace KidsLeisure.WinFormsUI
         static void Main()
         {
             var host = CreateHostBuilder().Build();
+
             using (var scope = host.Services.CreateScope())
             {
                 var context = scope.ServiceProvider.GetRequiredService<LeisureDbContext>();
@@ -61,46 +63,72 @@ namespace KidsLeisure.WinFormsUI
                     context.SaveChanges();
                 }
             }
+
             var orderService = host.Services.GetRequiredService<IOrderService>();
             var customerService = host.Services.GetRequiredService<ICustomerService>();
             var mapper = host.Services.GetRequiredService<IMapper>();
+
             ApplicationConfiguration.Initialize();
             Application.Run(new AuthorizationWin(orderService, customerService, mapper));
         }
+
         static IHostBuilder CreateHostBuilder() =>
-    Host.CreateDefaultBuilder()
-        .ConfigureServices((hostContext, services) =>
-        {
-            var connectionString = ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString;
-
-            services.AddDbContext<LeisureDbContext>(options =>
-                options.UseSqlServer(connectionString));
-
-            services.AddAutoMapper(typeof(MappingProfile).Assembly);
-            services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
-            services.AddScoped<IUnitOfWork, UnitOfWork>();
-            services.AddScoped<ICustomerService, CustomerService>();
-            services.AddScoped<CustomProgramPriceCalculator>();
-            services.AddScoped<DefaultPriceCalculator>();
-
-            services.AddScoped<Func<ProgramType, IPriceCalculatorStrategy>>(serviceProvider => strategyType =>
-            {
-                switch (strategyType)
+            Host.CreateDefaultBuilder()
+                .UseServiceProviderFactory(new AutofacServiceProviderFactory())
+                .ConfigureServices((context, services) =>
                 {
-                    case ProgramType.Custom:
-                        return serviceProvider.GetRequiredService<CustomProgramPriceCalculator>();
-                    case ProgramType.Birthday:
-                        return serviceProvider.GetRequiredService<DefaultPriceCalculator>();
-                    default:
-                        return serviceProvider.GetRequiredService<DefaultPriceCalculator>();
-                }
-            });
+                    var connectionString = System.Configuration.ConfigurationManager
+                        .ConnectionStrings["DefaultConnection"].ConnectionString;
 
-            services.AddScoped<PriceCalculatorSelector>();
+                    services.AddDbContext<LeisureDbContext>(options =>
+                        options.UseSqlServer(connectionString));
 
-            services.AddScoped<IOrderService, OrderService>();
+                    services.AddAutoMapper(typeof(MappingProfile).Assembly);
+                })
+                .ConfigureContainer<ContainerBuilder>(builder =>
+                {
+                    // Репозиторії, сервіси, калькулятори
+                    builder.RegisterGeneric(typeof(Repository<>))
+                        .As(typeof(IRepository<>))
+                        .InstancePerLifetimeScope();
 
-            services.AddScoped<Lazy<IOrderService>>(provider => new Lazy<IOrderService>(() => provider.GetRequiredService<IOrderService>()));
-        });
+                    builder.RegisterType<UnitOfWork>()
+                        .As<IUnitOfWork>()
+                        .InstancePerLifetimeScope();
+
+                    builder.RegisterType<CustomerService>()
+                        .As<ICustomerService>()
+                        .InstancePerLifetimeScope();
+
+                    builder.RegisterType<OrderService>()
+                        .As<IOrderService>()
+                        .InstancePerLifetimeScope();
+
+                    builder.RegisterType<CustomProgramPriceCalculator>()
+                        .AsSelf()
+                        .InstancePerLifetimeScope();
+
+                    builder.RegisterType<DefaultPriceCalculator>()
+                        .AsSelf()
+                        .InstancePerLifetimeScope();
+
+                    builder.Register<Func<ProgramType, IPriceCalculatorStrategy>>(ctx =>
+                    {
+                        var c = ctx.Resolve<IComponentContext>();
+                        return programType =>
+                        {
+                            return programType switch
+                            {
+                                ProgramType.Custom => c.Resolve<CustomProgramPriceCalculator>(),
+                                ProgramType.Birthday => c.Resolve<DefaultPriceCalculator>(),
+                                _ => c.Resolve<DefaultPriceCalculator>()
+                            };
+                        };
+                    });
+
+                    builder.RegisterType<PriceCalculatorSelector>()
+                        .AsSelf()
+                        .InstancePerLifetimeScope();
+                });
     }
 }

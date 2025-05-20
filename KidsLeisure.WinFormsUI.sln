@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KidsLeisure.WinFormsUI", "K
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KidsLeisure.DAL", "KidsLeisure.DAL\KidsLeisure.DAL.csproj", "{DD540E62-E684-4275-B548-33BF9E879485}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KidsLeisure.BLL", "KidsLeisure.BLL\KidsLeisure.BLL.csproj", "{D1993CA9-E84E-45AB-835A-F8DA564E685E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KidsLeisure.BLL", "KidsLeisure.BLL\KidsLeisure.BLL.csproj", "{D1993CA9-E84E-45AB-835A-F8DA564E685E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

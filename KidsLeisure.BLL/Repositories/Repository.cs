@@ -2,6 +2,7 @@
 using KidsLeisure.BLL.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
+using KidsLeisure.DAL.Entities;
 
 namespace KidsLeisure.BLL.Repositories
 {
@@ -63,5 +64,22 @@ namespace KidsLeisure.BLL.Repositories
                 await _context.SaveChangesAsync();
             }
         }
+
+        public async Task<OrderEntity> GetByIdWithIncludesAsync(int orderId, bool includeZones, bool includeAttractions, bool includeCharacters)
+        {
+            IQueryable<OrderEntity> query = _context.Orders;
+
+            if (includeZones)
+                query = query.Include(o => o.Zones).ThenInclude(oz => oz.Zone);
+            if (includeAttractions)
+                query = query.Include(o => o.Attractions).ThenInclude(oa => oa.Attraction);
+            if (includeCharacters)
+                query = query.Include(o => o.Characters).ThenInclude(oc => oc.Character);
+
+            return await query.FirstOrDefaultAsync(o => o.OrderId == orderId);
+        }
+
+
+
     }
 }

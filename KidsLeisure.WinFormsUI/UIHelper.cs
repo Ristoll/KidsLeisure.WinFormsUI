@@ -3,7 +3,8 @@ using KidsLeisure.DAL.Interfaces;
 using KidsLeisure.BLL.Interfaces;
 using KidsLeisure.DAL.Entities;
 using KidsLeisure.DAL.Helpers;
-
+using KidsLeisure.BLL.DTO;
+using AutoMapper;
 
 namespace KidsLeisure.UI
 {
@@ -24,45 +25,58 @@ namespace KidsLeisure.UI
             listBox.DisplayMember = "DisplayName";
         }
 
-        public static async Task LoadOrderItems<T>(IOrderService orderService, ListBox listBox) where T : class
+        public static async Task LoadOrderItems<T>(IOrderService orderService, ListBox listBox, IMapper mapper)
+    where T : class, IOrderItemDto
         {
             var displayItems = new BindingList<DisplayItem<T>>();
 
-            if (typeof(T) == typeof(OrderAttractionEntity))
+            if (typeof(T) == typeof(OrderAttractionDto))
             {
-                foreach (var attraction in orderService.CurrentOrder.Attractions ?? Enumerable.Empty<OrderAttractionEntity>())
+                foreach (var attraction in orderService.CurrentOrder.Attractions)
                 {
-                    var entity = await orderService.FindItemByAsync<AttractionEntity>(a => a.AttractionId == attraction.AttractionId);
-                    var displayName = entity != null ? $"{entity.Name} - {entity.Price} грн" : "(Невідомий атракціон)";
-                    displayItems.Add(new DisplayItem<T> { Entity = (T)(object)attraction, DisplayName = displayName });
+                    var entity = await orderService.FindItemByAsync<AttractionEntity>(a => a.AttractionId == attraction.Id);
+                    var dto = mapper.Map<OrderAttractionDto>(entity);
+                    if (dto != null)
+                    {
+                        var displayName = $"{dto.Name} - {dto.Price} грн";
+                        displayItems.Add(new DisplayItem<T> { Entity = dto as T, DisplayName = displayName });
+                    }
                 }
             }
-            else if (typeof(T) == typeof(OrderZoneEntity))
+            else if (typeof(T) == typeof(OrderZoneDto))
             {
-                foreach (var zone in orderService.CurrentOrder.Zones ?? Enumerable.Empty<OrderZoneEntity>())
+                foreach (var zone in orderService.CurrentOrder.Zones)
                 {
-                    var entity = await orderService.FindItemByAsync<ZoneEntity>(c => c.ZoneId == zone.ZoneId);
-                    var displayName = entity != null ? $"{entity.Name} - {entity.Price} грн" : "(Невідома зона)";
-                    displayItems.Add(new DisplayItem<T> { Entity = (T)(object)zone, DisplayName = displayName });
+                    var entity = await orderService.FindItemByAsync<ZoneEntity>(z => z.ZoneId == zone.Id);
+                    var dto = mapper.Map<OrderZoneDto>(entity);
+                    if (dto != null)
+                    {
+                        var displayName = $"{dto.Name} - {dto.Price} грн";
+                        displayItems.Add(new DisplayItem<T> { Entity = dto as T, DisplayName = displayName });
+                    }
                 }
             }
-            else if (typeof(T) == typeof(OrderCharacterEntity))
+            else if (typeof(T) == typeof(OrderCharacterDto))
             {
-                foreach (var character in orderService.CurrentOrder.Characters ?? Enumerable.Empty<OrderCharacterEntity>())
+                foreach (var character in orderService.CurrentOrder.Characters)
                 {
-                    var entity = await orderService.FindItemByAsync<CharacterEntity>(z => z.CharacterId == character.CharacterId);
-                    var displayName = entity != null ? $"{entity.Name} - {entity.Price} грн" : "(Невідомий аніматор)";
-                    displayItems.Add(new DisplayItem<T> { Entity = (T)(object)character, DisplayName = displayName });
+                    var entity = await orderService.FindItemByAsync<CharacterEntity>(c => c.CharacterId == character.Id);
+                    var dto = mapper.Map<OrderCharacterDto>(entity);
+                    if (dto != null)
+                    {
+                        var displayName = $"{dto.Name} - {dto.Price} грн";
+                        displayItems.Add(new DisplayItem<T> { Entity = dto as T, DisplayName = displayName });
+                    }
                 }
-            }
-            else
-            {
-                throw new InvalidOperationException($"Невідомий тип елемента: {typeof(T).FullName}");
             }
 
             listBox.DataSource = displayItems;
-            listBox.DisplayMember = "DisplayName";
+            listBox.DisplayMember = nameof(DisplayItem<T>.DisplayName);
+            listBox.ValueMember = nameof(DisplayItem<T>.Entity);
         }
+
+
+
 
         public static void AddElementInListBox(ListBox listBox1, ListBox listBox2)
         {
@@ -123,19 +137,19 @@ namespace KidsLeisure.UI
 
             switch (listBox.SelectedItem)
             {
-                case DisplayItem<OrderZoneEntity> zoneItem:
-                    orderService.RemoveFromOrderCollection(zoneItem.Entity);
-                    ((BindingList<DisplayItem<OrderZoneEntity>>)listBox.DataSource!).Remove(zoneItem);
-                    break;
-
-                case DisplayItem<OrderAttractionEntity> attractionItem:
+                case DisplayItem<OrderAttractionDto> attractionItem:
                     orderService.RemoveFromOrderCollection(attractionItem.Entity);
-                    ((BindingList<DisplayItem<OrderAttractionEntity>>)listBox.DataSource!).Remove(attractionItem);
+                    ((BindingList<DisplayItem<OrderAttractionDto>>)listBox.DataSource!).Remove(attractionItem);
                     break;
 
-                case DisplayItem<OrderCharacterEntity> characterItem:
+                case DisplayItem<OrderCharacterDto> characterItem:
                     orderService.RemoveFromOrderCollection(characterItem.Entity);
-                    ((BindingList<DisplayItem<OrderCharacterEntity>>)listBox.DataSource!).Remove(characterItem);
+                    ((BindingList<DisplayItem<OrderCharacterDto>>)listBox.DataSource!).Remove(characterItem);
+                    break;
+
+                case DisplayItem<OrderZoneDto> zoneItem:
+                    orderService.RemoveFromOrderCollection(zoneItem.Entity);
+                    ((BindingList<DisplayItem<OrderZoneDto>>)listBox.DataSource!).Remove(zoneItem);
                     break;
 
                 default:
@@ -146,17 +160,19 @@ namespace KidsLeisure.UI
             MessageBox.Show("Елемент видалено із замовлення.");
         }
 
+
+
         public static async Task<string> GetAttractionsMessageAsync(IOrderService orderService)
         {
             var message = string.Empty;
-            var items = orderService.CurrentOrder.Attractions;
+            List<OrderAttractionDto> items = orderService.CurrentOrder.Attractions.ToList();
 
             if (items != null && items.Count > 0)
             {
                 message += "Атракціони:\n";
                 foreach (var item in items)
                 {
-                    var attraction = await orderService.FindItemByAsync<AttractionEntity>(z => z.AttractionId == item.AttractionId);
+                    var attraction = await orderService.FindItemByAsync<AttractionEntity>(z => z.AttractionId == item.Id);
                     var name = attraction?.Name ?? "Невідомий атракціон";
                     var price = attraction?.Price ?? 0;
                     message += $"{name} - {price} грн\n";
@@ -174,14 +190,14 @@ namespace KidsLeisure.UI
         public static async Task<string> GetZonesMessageAsync(IOrderService orderService)
         {
             var message = string.Empty;
-            var items = orderService.CurrentOrder.Zones;
+            List<OrderZoneDto> items = orderService.CurrentOrder.Zones.ToList();
 
             if (items != null && items.Count > 0)
             {
                 message += "Зони:\n";
                 foreach (var item in items)
                 {
-                    var zone = await orderService.FindItemByAsync<ZoneEntity>(z => z.ZoneId == item.ZoneId);
+                    var zone = await orderService.FindItemByAsync<ZoneEntity>(z => z.ZoneId == item.Id);
                     var name = zone?.Name ?? "Невідома зона";
                     var price = zone?.Price ?? 0;
                     message += $"{name} - {price} грн\n";
@@ -199,14 +215,14 @@ namespace KidsLeisure.UI
         public static async Task<string> GetCharactersMessageAsync(IOrderService orderService)
         {
             var message = string.Empty;
-            var items = orderService.CurrentOrder.Characters;
+            List<OrderCharacterDto> items = orderService.CurrentOrder.Characters.ToList();
 
             if (items != null && items.Count > 0)
             {
                 message += "Персонажі:\n";
                 foreach (var item in items)
                 {
-                    var character = await orderService.FindItemByAsync<CharacterEntity>(z => z.CharacterId == item.CharacterId);
+                    var character = await orderService.FindItemByAsync<CharacterEntity>(z => z.CharacterId == item.Id);
                     var name = character?.Name ?? "Невідомий персонаж";
                     var price = character?.Price ?? 0;
                     message += $"{name} - {price} грн\n";
@@ -226,11 +242,11 @@ namespace KidsLeisure.UI
             switch (item)
             {
                 case DisplayItem <ZoneEntity> zone:
-                    return order.Zones.Any(z => z.ZoneId == zone.Entity.ZoneId);
+                    return order.Zones.Any(z => z.Id == zone.Entity.ZoneId);
                 case DisplayItem<AttractionEntity> attraction:
-                    return order.Attractions.Any(a => a.AttractionId == attraction.Entity.AttractionId);
+                    return order.Attractions.Any(a => a.Id == attraction.Entity.AttractionId);
                 case DisplayItem <CharacterEntity> character:
-                    return order.Characters.Any(c => c.CharacterId == character.Entity.CharacterId);
+                    return order.Characters.Any(c => c.Id == character.Entity.CharacterId);
                 default:
                     return false;
             }

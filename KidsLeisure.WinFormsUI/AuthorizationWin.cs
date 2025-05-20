@@ -1,6 +1,7 @@
 ﻿using System.Text.RegularExpressions;
 using KidsLeisure.BLL.Interfaces;
-using KidsLeisure.DAL.Entities;
+using KidsLeisure.BLL.DTO;
+using AutoMapper;
 
 namespace KidsLeisure.UI
 {
@@ -8,10 +9,12 @@ namespace KidsLeisure.UI
     {
         private readonly ICustomerService _customerService;
         private readonly IOrderService _orderService;
-        public AuthorizationWin(IOrderService orderService, ICustomerService customerService)
+        private readonly IMapper _mapper;
+        public AuthorizationWin(IOrderService orderService, ICustomerService customerService, IMapper mapper)
         {
             _orderService = orderService;
             _customerService = customerService;
+            _mapper = mapper;
             InitializeComponent();
         }
         private async void button1_Click(object sender, EventArgs e)
@@ -24,7 +27,7 @@ namespace KidsLeisure.UI
                 ValidatePhoneNumber(phoneNumber);
                 ValidateNickName(nickname);
 
-                _customerService.CurrentCustomer = new CustomerEntity
+                _customerService.CurrentCustomer = new CustomerDto
                 {
                     NickName = nickname,
                     PhoneNumber = phoneNumber
@@ -34,14 +37,14 @@ namespace KidsLeisure.UI
 
                 MessageBox.Show("Користувач авторизований успішно!");
 
-                KidsLeisureWin mainForm = new KidsLeisureWin(_orderService, _customerService);
+                KidsLeisureWin mainForm = new KidsLeisureWin(_orderService, _customerService, _mapper);
                 mainForm.Show();
+                this.Hide();
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message, "Помилка", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-            this.Hide();
         }
         private static void ValidatePhoneNumber(string phoneNumber)
         {

@@ -11,6 +11,7 @@ using KidsLeisure.BLL.Repositories;
 using KidsLeisure.BLL.Services;
 using KidsLeisure.DAL.Helpers;
 using KidsLeisure.BLL;
+using AutoMapper;
 
 namespace KidsLeisure.WinFormsUI
 {
@@ -62,8 +63,9 @@ namespace KidsLeisure.WinFormsUI
             }
             var orderService = host.Services.GetRequiredService<IOrderService>();
             var customerService = host.Services.GetRequiredService<ICustomerService>();
+            var mapper = host.Services.GetRequiredService<IMapper>();
             ApplicationConfiguration.Initialize();
-            Application.Run(new AuthorizationWin(orderService, customerService));
+            Application.Run(new AuthorizationWin(orderService, customerService, mapper));
         }
         static IHostBuilder CreateHostBuilder() =>
     Host.CreateDefaultBuilder()
@@ -73,7 +75,8 @@ namespace KidsLeisure.WinFormsUI
 
             services.AddDbContext<LeisureDbContext>(options =>
                 options.UseSqlServer(connectionString));
-            
+
+            services.AddAutoMapper(typeof(MappingProfile).Assembly);
             services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped<ICustomerService, CustomerService>();

@@ -1,4 +1,5 @@
-﻿using KidsLeisure.BLL.Interfaces;
+﻿using AutoMapper;
+using KidsLeisure.BLL.Interfaces;
 using KidsLeisure.DAL.Entities;
 
 namespace KidsLeisure.UI
@@ -6,10 +7,12 @@ namespace KidsLeisure.UI
     public partial class KidsLeisureWin : Form
     {
         private readonly IOrderService _orderService;
-        public KidsLeisureWin(IOrderService orderService, ICustomerService customerService)
+        private readonly IMapper _mapper;
+        public KidsLeisureWin(IOrderService orderService, ICustomerService customerService, IMapper mapper)
         {
             InitializeComponent();
             _orderService = orderService;
+            _mapper = mapper;
             panel2.Visible = false;
         }
 
@@ -32,7 +35,7 @@ namespace KidsLeisure.UI
                 }
                 else if (clickedItem.Text == "Кошик")
                 {
-                    ShoppingCartWin shoppingCart = new ShoppingCartWin(_orderService);
+                    ShoppingCartWin shoppingCart = new ShoppingCartWin(_orderService, _mapper);
                     shoppingCart.Show();
                 }
                 else

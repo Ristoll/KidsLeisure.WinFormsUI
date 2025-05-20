@@ -1,9 +1,9 @@
 ﻿namespace KidsLeisure.BLL.DTO
 {
-    public class OrderCharacterDto
+    public class OrderCharacterDto : IOrderItemDto
     {
-        public int CharacterId { get; set; }
-        public string CharacterName { get; set; } = string.Empty;
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
         public decimal Price { get; set; }
         public int OrderId { get; set; }
     }

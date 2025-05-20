@@ -1,4 +1,6 @@
-﻿using System.Linq.Expressions;
+﻿using KidsLeisure.DAL.Entities;
+using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
 namespace KidsLeisure.BLL.Interfaces
 {
@@ -12,5 +14,6 @@ namespace KidsLeisure.BLL.Interfaces
         Task AddRangeAsync(IEnumerable<T> entities);
         Task UpdateAsync(T entity);
         Task DeleteAsync(int id);
+        Task<OrderEntity> GetByIdWithIncludesAsync(int orderId, bool includeZones, bool includeAttractions, bool includeCharacters);
     }
 }

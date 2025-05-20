@@ -1,28 +1,34 @@
 ﻿using KidsLeisure.BLL.Interfaces;
 using KidsLeisure.DAL.Entities;
 using KidsLeisure.DAL.Helpers;
+using AutoMapper;
+using KidsLeisure.BLL.DTO;
+using KidsLeisure.BLL.Services;
 
 namespace KidsLeisure.UI
 {
     public partial class ShoppingCartWin : Form
     {
         private readonly IOrderService _orderService;
-        public ShoppingCartWin(IOrderService orderService)
+        private readonly IMapper _mapper;
+        public ShoppingCartWin(IOrderService orderService, IMapper mapper)
         {
             InitializeComponent();
             _orderService = orderService;
+            _mapper = mapper;
         }
 
         private async void ShoppingCart_Load(object sender, EventArgs e)
         {
-            await UIHelper.LoadOrderItems<OrderZoneEntity>(_orderService, listBox1);
-            await UIHelper.LoadOrderItems<OrderAttractionEntity>(_orderService, listBox2);
-            await UIHelper.LoadOrderItems<OrderCharacterEntity>(_orderService, listBox3);
+            await UIHelper.LoadOrderItems<OrderAttractionDto>(_orderService, listBox1, _mapper);
+            await UIHelper.LoadOrderItems<OrderCharacterDto>(_orderService, listBox2, _mapper);
+            await UIHelper.LoadOrderItems<OrderZoneDto>(_orderService, listBox3, _mapper);
             await InitializePriceAsync();
         }
 
         private async Task InitializePriceAsync()
         {
+            _orderService.SetOrderType(ProgramType.Custom);
             var totalPrice = await _orderService.CalculateOrderPriceAsync(ProgramType.Custom);
             label5.Text = totalPrice.ToString();
         }
@@ -34,7 +40,7 @@ namespace KidsLeisure.UI
                 MessageBox.Show("Виберіть дату та час, які ще не минули.", "Помилка", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
-            if(_orderService.CurrentOrder.Attractions.Count == 0 && _orderService.CurrentOrder.Characters.Count == 0 && _orderService.CurrentOrder.Zones.Count == 0)
+            if (_orderService.CurrentOrder.Attractions.Count == 0 && _orderService.CurrentOrder.Characters.Count == 0 && _orderService.CurrentOrder.Zones.Count == 0)
             {
                 MessageBox.Show("Замовлення пусте. Будь ласка, оберіть щось, щоб скласти замовлення.", "Помилка", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
@@ -64,26 +70,23 @@ namespace KidsLeisure.UI
         private async void button1_Click(object sender, EventArgs e)
         {
             UIHelper.RemoveSelectedItemFromCart(_orderService, listBox1);
-            await _orderService.CalculateOrderPriceAsync(ProgramType.Custom);
             decimal price = await _orderService.CalculateOrderPriceAsync(ProgramType.Custom);
-            label5.Text = $"{price} грн";
+            label5.Text = $"{price}";
         }
 
 
         private async void button2_Click(object sender, EventArgs e)
         {
             UIHelper.RemoveSelectedItemFromCart(_orderService, listBox2);
-            await _orderService.CalculateOrderPriceAsync(ProgramType.Custom);
             decimal price = await _orderService.CalculateOrderPriceAsync(ProgramType.Custom);
-            label5.Text = $"{price} грн";
+            label5.Text = $"{price}";
         }
 
         private async void button3_Click(object sender, EventArgs e)
         {
             UIHelper.RemoveSelectedItemFromCart(_orderService, listBox3);
-            await _orderService.CalculateOrderPriceAsync(ProgramType.Custom);
             decimal price = await _orderService.CalculateOrderPriceAsync(ProgramType.Custom);
-            label5.Text = $"{price} грн";
+            label5.Text = $"{price}";
         }
     }
 }

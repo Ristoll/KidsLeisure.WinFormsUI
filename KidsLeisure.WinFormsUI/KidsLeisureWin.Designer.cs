@@ -99,7 +99,7 @@
             // деньНародженняToolStripMenuItem
             // 
             деньНародженняToolStripMenuItem.Name = "деньНародженняToolStripMenuItem";
-            деньНародженняToolStripMenuItem.Size = new Size(224, 26);
+            деньНародженняToolStripMenuItem.Size = new Size(221, 26);
             деньНародженняToolStripMenuItem.Text = "День Народження";
             деньНародженняToolStripMenuItem.Click += деньНародженняToolStripMenuItem_Click;
             // 

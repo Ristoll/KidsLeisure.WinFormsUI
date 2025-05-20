@@ -26,8 +26,11 @@ namespace KidsLeisure.BLL.Services
             await repository.AddAsync(entity);
             await _unitOfWork.SaveChangesAsync();
 
+            CurrentCustomer!.Id = entity.CustomerId;
+
             return _mapper.Map<CustomerDto>(entity);
         }
+
 
         public async Task<List<CustomerDto>> GetAllCustomersAsync()
         {

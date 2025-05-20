@@ -40,11 +40,20 @@ namespace KidsLeisure.BLL.Services
         public async Task<OrderDto> CreateCustomOrderAsync()
         {
             var customerDto = _customerService.CurrentCustomer!;
+
+            var customerRepo = _unitOfWork.GetRepository<CustomerEntity>();
+
+            var allCustomers = await customerRepo.GetAllAsync();
+            var existingCustomer = allCustomers.FirstOrDefault(c => c.CustomerId == customerDto.Id);
+
+            if (existingCustomer == null)
+                throw new InvalidOperationException("Клієнта не знайдено в базі даних.");
+
             var orderEntity = _mapper.Map<OrderEntity>(CurrentOrder);
 
-            orderEntity.CustomerId = customerDto.Id;
-            orderEntity.CustomerName = customerDto.NickName;
-            orderEntity.CustomerPhone = customerDto.PhoneNumber;
+            orderEntity.CustomerId = existingCustomer.CustomerId;
+            orderEntity.CustomerName = existingCustomer.NickName;
+            orderEntity.CustomerPhone = existingCustomer.PhoneNumber;
 
             await _unitOfWork.GetRepository<OrderEntity>().AddAsync(orderEntity);
             await _unitOfWork.SaveChangesAsync();
@@ -55,6 +64,7 @@ namespace KidsLeisure.BLL.Services
         public async Task<OrderDto> CreateBirthdayOrderAsync()
         {
             var customerDto = _customerService.CurrentCustomer!;
+
             var orderEntity = new OrderEntity
             {
                 ProgramType = ProgramType.Birthday,
@@ -63,12 +73,16 @@ namespace KidsLeisure.BLL.Services
                 CustomerPhone = customerDto.PhoneNumber
             };
 
+            // Додаємо замовлення
             await _unitOfWork.GetRepository<OrderEntity>().AddAsync(orderEntity);
+            await _unitOfWork.SaveChangesAsync();
 
+            // Беремо деякі атракціони, персонажів і зони
             var attractions = (await _unitOfWork.GetRepository<AttractionEntity>().GetAllAsync()).Take(3).ToList();
             var characters = (await _unitOfWork.GetRepository<CharacterEntity>().GetAllAsync()).Take(2).ToList();
             var zones = (await _unitOfWork.GetRepository<ZoneEntity>().GetAllAsync()).Take(2).ToList();
 
+            // Додаємо зв’язки замовлення з атракціонами, персонажами, зонами
             await _unitOfWork.GetRepository<OrderAttractionEntity>().AddRangeAsync(attractions.Select(a => new OrderAttractionEntity
             {
                 OrderId = orderEntity.OrderId,
@@ -87,11 +101,25 @@ namespace KidsLeisure.BLL.Services
                 ZoneId = z.ZoneId
             }));
 
-            orderEntity.TotalPrice = await CalculateOrderPriceAsync(ProgramType.Birthday);
+            // Зберігаємо зв’язки в базі
             await _unitOfWork.SaveChangesAsync();
 
-            return _mapper.Map<OrderDto>(orderEntity);
+            // Повторно завантажуємо замовлення з усіма зв’язками
+            var orderWithItems = await _unitOfWork.GetRepository<OrderEntity>()
+                .GetByIdWithIncludesAsync(orderEntity.OrderId, includeZones: true, includeAttractions: true, includeCharacters: true);
+
+            // Обчислюємо загальну ціну
+            orderWithItems.TotalPrice = await CalculateOrderPriceAsync(orderWithItems);
+
+            // Оновлюємо CurrentOrder (можливо, це поле класу)
+            CurrentOrder = _mapper.Map<OrderDto>(orderWithItems);
+
+            // Зберігаємо оновлену ціну в базі
+            await _unitOfWork.SaveChangesAsync();
+
+            return CurrentOrder;
         }
+
 
         public async Task<OrderDto> UpdateOrderAsync()
         {
@@ -115,6 +143,12 @@ namespace KidsLeisure.BLL.Services
             return await strategy.CalculatePriceAsync(orderEntity);
         }
 
+        public async Task<decimal> CalculateOrderPriceAsync(OrderEntity orderEntity)
+        {
+            var strategy = _priceCalculatorSelector.SelectStrategy(orderEntity.ProgramType);
+            return await strategy.CalculatePriceAsync(orderEntity);
+        }
+
         public void SetOrderTime(DateTime dateTime) => CurrentOrder.Date = dateTime;
         public void SetOrderType(ProgramType orderType) => CurrentOrder.ProgramType = _mapper.Map<ProgramTypeDto>(orderType);
         public void SetTotalPrice(decimal totalPrice) => CurrentOrder.TotalPrice = totalPrice;
@@ -126,21 +160,27 @@ namespace KidsLeisure.BLL.Services
                 case AttractionEntity attraction:
                     CurrentOrder.Attractions.Add(new OrderAttractionDto
                     {
-                        AttractionId = attraction.AttractionId
+                        Id = attraction.AttractionId,
+                        Name = attraction.Name,
+                        Price = attraction.Price
                     });
                     break;
 
                 case CharacterEntity character:
                     CurrentOrder.Characters.Add(new OrderCharacterDto
                     {
-                        CharacterId = character.CharacterId
+                        Id = character.CharacterId,
+                        Name = character.Name,
+                        Price = character.Price
                     });
                     break;
 
                 case ZoneEntity zone:
                     CurrentOrder.Zones.Add(new OrderZoneDto
                     {
-                        ZoneId = zone.ZoneId
+                        Id = zone.ZoneId,
+                        Name = zone.Name,
+                        Price = zone.Price
                     });
                     break;
 
@@ -149,26 +189,27 @@ namespace KidsLeisure.BLL.Services
             }
         }
 
-        public void RemoveFromOrderCollection(IOrderItemEntity selectedItem)
+        public void RemoveFromOrderCollection(IOrderItemDto selectedItem)
         {
             switch (selectedItem)
             {
-                case OrderAttractionEntity attraction:
-                    CurrentOrder.Attractions.RemoveAll(a => a.AttractionId == attraction.AttractionId);
+                case OrderAttractionDto attraction:
+                    CurrentOrder.Attractions.RemoveAll(a => a.Id == attraction.Id);
                     break;
 
-                case OrderCharacterEntity character:
-                    CurrentOrder.Characters.RemoveAll(c => c.CharacterId == character.CharacterId);
+                case OrderCharacterDto character:
+                    CurrentOrder.Characters.RemoveAll(c => c.Id == character.Id);
                     break;
 
-                case OrderZoneEntity zone:
-                    CurrentOrder.Zones.RemoveAll(z => z.ZoneId == zone.ZoneId);
+                case OrderZoneDto zone:
+                    CurrentOrder.Zones.RemoveAll(z => z.Id == zone.Id);
                     break;
 
                 default:
                     throw new ArgumentException("Unknown order item type.");
             }
         }
+
 
         public async Task<T?> FindItemByAsync<T>(Expression<Func<T, bool>> predicate)
             where T : class, IItemEntity

@@ -22,9 +22,10 @@ namespace KidsLeisure.BLL.Interfaces
         Task<OrderDto> UpdateOrderAsync();
         Task DeleteOrderAsync();
         Task<T?> FindItemByAsync<T>(Expression<Func<T, bool>> predicate) where T : class, IItemEntity;
-        Task<decimal> CalculateOrderPriceAsync(ProgramType OrderType);
+        Task<decimal> CalculateOrderPriceAsync(OrderEntity orderEntity);
+        Task<decimal> CalculateOrderPriceAsync(ProgramType programType);
         void AddToOrderCollection(IItemEntity selectedItem);
-        void RemoveFromOrderCollection(IOrderItemEntity selectedItem);
+        void RemoveFromOrderCollection(IOrderItemDto selectedItem);
         void SetOrderTime(DateTime dateTime);
         void SetTotalPrice(decimal totalPrice);
         void SetOrderType(ProgramType eOrderType);

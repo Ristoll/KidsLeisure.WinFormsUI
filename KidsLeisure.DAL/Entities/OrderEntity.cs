@@ -6,7 +6,7 @@ namespace KidsLeisure.DAL.Entities
     {
         public int OrderId { get; set; }
         public DateTime? Date { get; set; }
-        public ProgramType? ProgramType { get; set; }
+        public ProgramType ProgramType { get; set; }
         public decimal TotalPrice { get; set; }
         public string CustomerName { get; set; } = string.Empty;
         public string CustomerPhone { get; set; } = string.Empty;

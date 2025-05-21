@@ -26,7 +26,7 @@ namespace KidsLeisure.UI
         }
 
         public static async Task LoadOrderItems<T>(IOrderService orderService, ListBox listBox, IMapper mapper)
-    where T : class, IOrderItemDto
+    where T : class, OrderItemDto
         {
             var displayItems = new BindingList<DisplayItem<T>>();
 

@@ -181,7 +181,7 @@ namespace KidsLeisure.BLL.Services
             }
         }
 
-        public void RemoveFromOrderCollection(IOrderItemDto selectedItem)
+        public void RemoveFromOrderCollection(OrderItemDto selectedItem)
         {
             switch (selectedItem)
             {

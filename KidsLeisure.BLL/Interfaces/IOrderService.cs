@@ -20,7 +20,7 @@ namespace KidsLeisure.BLL.Interfaces
         Task<decimal> CalculateOrderPriceAsync(OrderEntity orderEntity);
         Task<decimal> CalculateOrderPriceAsync(ProgramType programType);
         void AddToOrderCollection(IItemEntity selectedItem);
-        void RemoveFromOrderCollection(IOrderItemDto selectedItem);
+        void RemoveFromOrderCollection(OrderItemDto selectedItem);
         void SetOrderTime(DateTime dateTime);
         void SetTotalPrice(decimal totalPrice);
         void SetOrderType(ProgramType eOrderType);

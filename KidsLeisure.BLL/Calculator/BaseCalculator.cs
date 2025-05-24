@@ -11,7 +11,7 @@ namespace KidsLeisure.BLL.Calculator
             _lazyOrderService = orderService ?? throw new ArgumentNullException(nameof(orderService));
         }
 
-        public async Task<decimal> CalculatePriceAsync(OrderEntity order)
+        public virtual async Task<decimal> CalculatePriceAsync(OrderEntity order)
         {
             var orderService = _lazyOrderService.Value;
             decimal totalPrice = 0;

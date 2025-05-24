@@ -4,7 +4,7 @@ using KidsLeisure.BLL.DTO;
 using KidsLeisure.BLL.Interfaces;
 using KidsLeisure.BLL.Services;
 using KidsLeisure.DAL.Entities;
-using Moq;
+using NSubstitute;
 using System.Linq.Expressions;
 
 namespace KidsLeisure.Tests
@@ -12,27 +12,27 @@ namespace KidsLeisure.Tests
     public class CustomerServiceTests
     {
         private readonly IFixture _fixture;
-        private readonly Mock<IUnitOfWork> _unitOfWorkMock;
-        private readonly Mock<IRepository<CustomerEntity>> _repositoryMock;
-        private readonly Mock<IMapper> _mapperMock;
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly IRepository<CustomerEntity> _repository;
+        private readonly IMapper _mapper;
         private readonly CustomerService _customerService;
 
         public CustomerServiceTests()
         {
             _fixture = new Fixture();
-
-            // Заміна поведінки рекурсії, щоб уникнути циклічних помилок AutoFixture
-            _fixture.Behaviors.Remove(new ThrowingRecursionBehavior());
+            _fixture.Behaviors
+                .OfType<ThrowingRecursionBehavior>()
+                .ToList()
+                .ForEach(b => _fixture.Behaviors.Remove(b));
             _fixture.Behaviors.Add(new OmitOnRecursionBehavior());
 
-            _unitOfWorkMock = new Mock<IUnitOfWork>();
-            _repositoryMock = new Mock<IRepository<CustomerEntity>>();
-            _mapperMock = new Mock<IMapper>();
+            _unitOfWork = Substitute.For<IUnitOfWork>();
+            _repository = Substitute.For<IRepository<CustomerEntity>>();
+            _mapper = Substitute.For<IMapper>();
 
-            _unitOfWorkMock.Setup(uow => uow.GetRepository<CustomerEntity>())
-                           .Returns(_repositoryMock.Object);
+            _unitOfWork.GetRepository<CustomerEntity>().Returns(_repository);
 
-            _customerService = new CustomerService(_unitOfWorkMock.Object, _mapperMock.Object);
+            _customerService = new CustomerService(_unitOfWork, _mapper);
         }
 
         [Fact]
@@ -42,33 +42,21 @@ namespace KidsLeisure.Tests
             var dto = _fixture.Create<CustomerDto>();
             var entity = _fixture.Create<CustomerEntity>();
 
-            _unitOfWorkMock.Setup(u => u.GetRepository<CustomerEntity>())
-                           .Returns(_repositoryMock.Object);
+            _mapper.Map<CustomerEntity>(dto).Returns(entity);
+            _mapper.Map<CustomerDto>(entity).Returns(dto);
+            _repository.AddAsync(entity).Returns(Task.CompletedTask);
+            _unitOfWork.SaveChangesAsync().Returns(1);
 
-            _mapperMock.Setup(m => m.Map<CustomerEntity>(dto))
-                       .Returns(entity);
-
-            _repositoryMock.Setup(r => r.AddAsync(entity))
-                           .Returns(Task.CompletedTask);
-
-            _unitOfWorkMock.Setup(u => u.SaveChangesAsync())
-                           .ReturnsAsync(1);
-
-            _mapperMock.Setup(m => m.Map<CustomerDto>(entity))
-                       .Returns(dto);
-
-            // Встановлюємо CurrentCustomer у сервісі перед викликом методу
             _customerService.CurrentCustomer = dto;
 
             // Act
             var result = await _customerService.CreateCustomerAsync();
 
             // Assert
-            _repositoryMock.Verify(r => r.AddAsync(entity), Times.Once);
-            _unitOfWorkMock.Verify(u => u.SaveChangesAsync(), Times.Once);
+            await _repository.Received(1).AddAsync(entity);
+            await _unitOfWork.Received(1).SaveChangesAsync();
             Assert.Equal(dto, result);
         }
-
 
         [Fact]
         public async Task GetAllCustomersAsync_ShouldReturnMappedList()
@@ -77,11 +65,8 @@ namespace KidsLeisure.Tests
             var entities = _fixture.Create<List<CustomerEntity>>();
             var dtos = _fixture.Create<List<CustomerDto>>();
 
-            _repositoryMock.Setup(r => r.GetAllAsync())
-                           .ReturnsAsync(entities);
-
-            _mapperMock.Setup(m => m.Map<List<CustomerDto>>(entities))
-                       .Returns(dtos);
+            _repository.GetAllAsync().Returns(entities);
+            _mapper.Map<List<CustomerDto>>(entities).Returns(dtos);
 
             // Act
             var result = await _customerService.GetAllCustomersAsync();
@@ -97,11 +82,8 @@ namespace KidsLeisure.Tests
             var entity = _fixture.Create<CustomerEntity>();
             var dto = _fixture.Create<CustomerDto>();
 
-            _repositoryMock.Setup(r => r.FindAsync(It.IsAny<Expression<System.Func<CustomerEntity, bool>>>()))
-                           .ReturnsAsync(entity);
-
-            _mapperMock.Setup(m => m.Map<CustomerDto>(entity))
-                       .Returns(dto);
+            _repository.FindAsync(Arg.Any<Expression<Func<CustomerEntity, bool>>>()).Returns(entity);
+            _mapper.Map<CustomerDto>(entity).Returns(dto);
 
             // Act
             var result = await _customerService.GetCustomerByIdAsync(entity.CustomerId);
@@ -114,8 +96,7 @@ namespace KidsLeisure.Tests
         public async Task GetCustomerByIdAsync_ShouldReturnNull_WhenEntityNotFound()
         {
             // Arrange
-            _repositoryMock.Setup(r => r.FindAsync(It.IsAny<Expression<System.Func<CustomerEntity, bool>>>()))
-                           .ReturnsAsync((CustomerEntity?)null);
+            _repository.FindAsync(Arg.Any<Expression<Func<CustomerEntity, bool>>>()).Returns((CustomerEntity?)null);
 
             // Act
             var result = await _customerService.GetCustomerByIdAsync(123);

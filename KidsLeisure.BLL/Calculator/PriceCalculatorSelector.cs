@@ -1,29 +1,26 @@
-﻿using KidsLeisure.BLL.Interfaces;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Autofac;
+using KidsLeisure.BLL.Interfaces;
 using KidsLeisure.DAL.Helpers;
 
 namespace KidsLeisure.BLL.Calculator
 {
     public class PriceCalculatorSelector : IPriceCalculatorSelector
     {
-        private readonly IServiceProvider _serviceProvider;
+        private readonly IComponentContext _context;
 
-        public PriceCalculatorSelector(IServiceProvider serviceProvider)
+        public PriceCalculatorSelector(IComponentContext context)
         {
-            _serviceProvider = serviceProvider;
+            _context = context;
         }
 
-        public IPriceCalculatorStrategy SelectStrategy(ProgramType strategyType)
+        public IPriceCalculatorStrategy SelectStrategy(ProgramType type)
         {
-            switch (strategyType)
+            return type switch
             {
-                case ProgramType.Custom:
-                    return _serviceProvider.GetRequiredService<CustomProgramPriceCalculator>();
-                case ProgramType.Birthday:
-                    return _serviceProvider.GetRequiredService<DefaultPriceCalculator>();
-                default:
-                    return _serviceProvider.GetRequiredService<DefaultPriceCalculator>();
-            }
+                ProgramType.Custom => _context.Resolve<CustomProgramPriceCalculator>(),
+                ProgramType.Birthday => _context.Resolve<DefaultPriceCalculator>(),
+                _ => _context.Resolve<DefaultPriceCalculator>()
+            };
         }
     }
 }

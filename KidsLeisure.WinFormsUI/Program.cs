@@ -125,9 +125,8 @@ namespace KidsLeisure.WinFormsUI
                             };
                         };
                     });
-
                     builder.RegisterType<PriceCalculatorSelector>()
-                        .AsSelf()
+                        .As<IPriceCalculatorSelector>()
                         .InstancePerLifetimeScope();
                 });
     }

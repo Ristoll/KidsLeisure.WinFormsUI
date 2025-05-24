@@ -11,10 +11,9 @@ namespace KidsLeisure.BLL.Calculator
         {
         }
 
-        public new async Task<decimal> CalculatePriceAsync(OrderEntity order)
+        public override async Task<decimal> CalculatePriceAsync(OrderEntity order)
         {
             decimal totalPrice = await base.CalculatePriceAsync(order);
-
             return totalPrice + additionalPrice;
         }
     }

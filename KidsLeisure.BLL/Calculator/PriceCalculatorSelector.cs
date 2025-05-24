@@ -4,7 +4,7 @@ using KidsLeisure.DAL.Helpers;
 
 namespace KidsLeisure.BLL.Calculator
 {
-    public class PriceCalculatorSelector
+    public class PriceCalculatorSelector : IPriceCalculatorSelector
     {
         private readonly IServiceProvider _serviceProvider;
 

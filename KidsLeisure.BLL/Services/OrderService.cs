@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using KidsLeisure.BLL.Calculator;
 using KidsLeisure.BLL.DTO;
 using KidsLeisure.BLL.Interfaces;
 using KidsLeisure.DAL.Entities;
@@ -13,7 +12,7 @@ namespace KidsLeisure.BLL.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICustomerService _customerService;
-        private readonly PriceCalculatorSelector _priceCalculatorSelector;
+        private readonly IPriceCalculatorSelector _priceCalculatorSelector;
         private readonly IMapper _mapper;
 
         public OrderDto CurrentOrder { get; set; } = new();
@@ -21,7 +20,7 @@ namespace KidsLeisure.BLL.Services
         public OrderService(
             IUnitOfWork unitOfWork,
             ICustomerService customerService,
-            PriceCalculatorSelector priceCalculatorSelector,
+            IPriceCalculatorSelector priceCalculatorSelector,
             IMapper mapper)
         {
             _unitOfWork = unitOfWork;
@@ -127,11 +126,11 @@ namespace KidsLeisure.BLL.Services
             await _unitOfWork.GetRepository<OrderEntity>().DeleteAsync(CurrentOrder.OrderId);
             await _unitOfWork.SaveChangesAsync();
         }
-
-        public async Task<decimal> CalculateOrderPriceAsync(ProgramType orderType)
+        
+        public async Task<decimal> CalculateOrderPriceAsync(ProgramType programType)
         {
             var orderEntity = _mapper.Map<OrderEntity>(CurrentOrder);
-            var strategy = _priceCalculatorSelector.SelectStrategy(orderType);
+            var strategy = _priceCalculatorSelector.SelectStrategy(programType);
             return await strategy.CalculatePriceAsync(orderEntity);
         }
 
@@ -142,7 +141,7 @@ namespace KidsLeisure.BLL.Services
         }
 
         public void SetOrderTime(DateTime dateTime) => CurrentOrder.Date = dateTime;
-        public void SetOrderType(ProgramType orderType) => CurrentOrder.ProgramType = _mapper.Map<ProgramTypeDto>(orderType);
+        public void SetOrderType(ProgramType eOrderType) => CurrentOrder.ProgramType = _mapper.Map<ProgramTypeDto>(eOrderType);
         public void SetTotalPrice(decimal totalPrice) => CurrentOrder.TotalPrice = totalPrice;
 
         public void AddToOrderCollection(IItemEntity selectedItem)

@@ -25,6 +25,12 @@ namespace KidsLeisure.Tests
         public OrderServiceTests()
         {
             _fixture = new Fixture().Customize(new AutoNSubstituteCustomization { ConfigureMembers = true });
+            _fixture.Behaviors
+                .OfType<ThrowingRecursionBehavior>()
+                .ToList()
+                .ForEach(b => _fixture.Behaviors.Remove(b));
+            _fixture.Behaviors.Add(new OmitOnRecursionBehavior());
+
             _unitOfWork = _fixture.Freeze<IUnitOfWork>();
             _customerService = _fixture.Freeze<ICustomerService>();
             _priceCalculatorSelector = _fixture.Freeze<IPriceCalculatorSelector>();
@@ -374,7 +380,7 @@ namespace KidsLeisure.Tests
         [Fact]
         public void RemoveFromOrderCollection_ThrowsOnUnknownType()
         {
-            var unknown = Substitute.For<IOrderItemDto>();
+            var unknown = Substitute.For<OrderItemDto>();
 
             Assert.Throws<ArgumentException>(() => _orderService.RemoveFromOrderCollection(unknown));
         }
